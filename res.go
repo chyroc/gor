@@ -7,6 +7,7 @@ import (
 	"reflect"
 )
 
+// Res is http ResponseWriter and some gor Response method
 type Res struct {
 	http.ResponseWriter
 }
@@ -17,15 +18,17 @@ func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) Res {
 	}
 }
 
-func (res *Res) Send(v string) {
-	res.Write([]byte(v))
-}
-
 func (res *Res) errResponseTypeUnsupported(vtype string, v interface{}) {
 	http.Error(res, fmt.Sprintf("[%s] [%s] %+v", ErrResponseTypeUnsupported, vtype, v), http.StatusInternalServerError)
 }
 
-func (res *Res) Json(v interface{}) {
+// Send Send a response
+func (res *Res) Send(v string) {
+	res.Write([]byte(v))
+}
+
+// JSON Send json response
+func (res *Res) JSON(v interface{}) {
 	if v == nil {
 		res.errResponseTypeUnsupported("nil", v)
 		return
@@ -43,7 +46,7 @@ func (res *Res) Json(v interface{}) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(res, ErrJsonMarshal.Error())
+		fmt.Fprintf(res, ErrJSONMarshal.Error())
 		return
 	}
 

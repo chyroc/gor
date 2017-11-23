@@ -16,6 +16,9 @@ jobs:
     steps:
       - checkout
       - run: go get -u github.com/rakyll/gotest
-      - run: make checkstyle
-      - run: make
-      - run: make test
+      - run: go get -u github.com/alecthomas/gometalinter
+      - run: gometalinter --install
+
+      - run: ./.circleci/check_code_style.sh
+      - run: gometalinter --config=./.circleci/gometalinter_config.json ./...
+      - run: gotest $(go list ./... | grep -v /vendor | grep -v /examples)

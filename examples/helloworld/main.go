@@ -18,7 +18,7 @@ func main() {
 	})
 
 	app.Get("/json", func(req *gor.Req, res gor.Res) {
-		res.Json(1)
+		res.JSON(1)
 	})
 
 	fmt.Printf("err: %+v\n", app.Listen(":3000"))

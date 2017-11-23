@@ -65,7 +65,7 @@ func TestJson(t *testing.T) {
 			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()
 
-			app.Get("/", func(req *Req, res Res) { res.Json(v) })
+			app.Get("/", func(req *Req, res Res) { res.JSON(v) })
 			e.GET("/").Expect().Status(http.StatusOK).JSON().Equal(v)
 		}
 	}
@@ -93,7 +93,7 @@ func TestJson(t *testing.T) {
 			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()
 
-			app.Get("/", func(req *Req, res Res) { res.Json(v) })
+			app.Get("/", func(req *Req, res Res) { res.JSON(v) })
 			e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal(msg)
 		}
 	}

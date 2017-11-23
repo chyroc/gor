@@ -2,6 +2,7 @@ package gor
 
 import "net/http"
 
+// Req is http Request struct
 type Req struct {
 	*http.Request
 }
