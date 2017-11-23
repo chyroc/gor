@@ -3,25 +3,15 @@ package gor
 import "net/http"
 
 type Res struct {
+	http.ResponseWriter
 }
 
-//ResponseWriter, *Request
-
-func httpResponseWriterToRes(r http.ResponseWriter) Res {
-	return Res{}
+func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) Res {
+	return Res{
+		httpResponseWriter,
+	}
 }
 
-func (req *Req) Header() http.Header {
-	return make(http.Header)
-}
-
-func (req *Req) Write([]byte) (int, error) {
-	return 0, nil
-}
-
-func (req *Req) WriteHeader(int) {
-}
-
-func (res *Res) Send(v interface{}) {
-
+func (res *Res) Send(v string) {
+	res.Write([]byte(v))
 }

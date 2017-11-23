@@ -13,12 +13,6 @@ type Router interface {
 
 type HandlerFunc func(*Req, Res)
 
-func stdHandler(h HandlerFunc) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-	}
-}
-
 type Gor struct {
 	handlers map[string]HandlerFunc
 }
@@ -42,8 +36,7 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
 	if handle, ok := g.handlers[httpMethod+path]; ok {
-		stdHandler(handle)(w, r)
-		//handle(httpRequestToReq(r), httpResponseWriterToRes(w))
+		handle(httpRequestToReq(r), httpResponseWriterToRes(w))
 		return
 	}
 

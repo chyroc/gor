@@ -2,11 +2,12 @@ package gor
 
 import "net/http"
 
-//http.Request
-
 type Req struct {
+	*http.Request
 }
 
-func httpRequestToReq(r *http.Request) *Req {
-	return &Req{}
+func httpRequestToReq(httpRequest *http.Request) *Req {
+	return &Req{
+		httpRequest,
+	}
 }
