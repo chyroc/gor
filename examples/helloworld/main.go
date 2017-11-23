@@ -17,5 +17,9 @@ func main() {
 		res.Send("Hello World : POST")
 	})
 
+	app.Get("/json", func(req *gor.Req, res gor.Res) {
+		res.Json([]interface{}{"ds", 1, map[string]string{"1": "2"}})
+	})
+
 	fmt.Printf("err: %+v\n", app.Listen(":3000"))
 }
