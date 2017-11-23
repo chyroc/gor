@@ -2,7 +2,7 @@ package gor
 
 import "net/http"
 
-// sdafasReq is http Request struct
+// Req is http Request struct
 type Req struct {
 	*http.Request
 }
