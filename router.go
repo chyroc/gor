@@ -9,6 +9,7 @@ import (
 type Router interface {
 	Get(pattern string, h HandlerFunc)
 	Listen(port int)
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 type HandlerFunc func(*Req, Res)
@@ -41,7 +42,7 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprintf(w, ErrNotFound)
+	fmt.Fprintf(w, http.StatusText(http.StatusNotFound))
 	return
 }
 
