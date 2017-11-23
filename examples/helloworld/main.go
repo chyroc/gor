@@ -14,8 +14,8 @@ func main() {
 	})
 
 	app.Post("/", func(req *gor.Req, res gor.Res) {
-		res.Send("Hello World")
+		res.Send("Hello World : POST")
 	})
 
-	fmt.Printf("", app.Listen(":3000"))
+	fmt.Printf("err: %+v\n", app.Listen(":3000"))
 }
