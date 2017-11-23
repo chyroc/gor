@@ -9,6 +9,7 @@ checkstyle:
 	./.circleci/check_code_style.sh
 
 test:
+	gotest github.com/Chyroc/gor
 	gotest github.com/Chyroc/gor/test
 
 .PHONY: build checkstyle test
