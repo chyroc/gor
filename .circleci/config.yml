@@ -15,6 +15,7 @@ jobs:
     working_directory: /go/src/github.com/Chyroc/gor
     steps:
       - checkout
+      - run: golint $(go list ./... | grep -v /vendor/)
       - run: go get -u github.com/rakyll/gotest
       - run: make checkstyle
       - run: make
