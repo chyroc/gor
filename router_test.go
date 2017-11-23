@@ -9,30 +9,46 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestServer(t *testing.T, handler http.Handler) (*httptest.Server, *httpexpect.Expect, *assert.Assertions) {
+func newTestServer(t *testing.T) (*Gor, *httptest.Server, *httpexpect.Expect, *assert.Assertions) {
+	handler := NewGor()
 	ts := httptest.NewServer(handler)
 	e := httpexpect.New(t, ts.URL)
 	as := assert.New(t)
 
-	return ts, e, as
+	return handler, ts, e, as
+}
+
+func TestMethod(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Get("/", func(req *Req, res Res) { res.Send("get") })
+	app.Head("/", func(req *Req, res Res) { res.Send("head") })
+	app.Post("/", func(req *Req, res Res) { res.Send("post") })
+	app.Put("/", func(req *Req, res Res) { res.Send("put") })
+	app.Patch("/", func(req *Req, res Res) { res.Send("patch") })
+	app.Delete("/", func(req *Req, res Res) { res.Send("delete") })
+	app.Connect("/", func(req *Req, res Res) { res.Send("connect") })
+	app.Options("/", func(req *Req, res Res) { res.Send("options") })
+	app.Trace("/", func(req *Req, res Res) { res.Send("trace") })
+
+	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("get")
+	e.PATCH("/").Expect().Status(http.StatusOK).Text().Equal("patch")
+	e.POST("/").Expect().Status(http.StatusOK).Text().Equal("post")
+	e.PUT("/").Expect().Status(http.StatusOK).Text().Equal("put")
+	e.PATCH("/").Expect().Status(http.StatusOK).Text().Equal("patch")
+	e.DELETE("/").Expect().Status(http.StatusOK).Text().Equal("delete")
+	e.Request("CONNECT", "/").Expect().Status(http.StatusOK).Text().Equal("connect")
+	e.OPTIONS("/").Expect().Status(http.StatusOK).Text().Equal("options")
+	e.Request("TRACE", "/").Expect().Status(http.StatusOK).Text().Equal("trace")
 }
 
 func TestSend(t *testing.T) {
-	app := NewGor()
-
-	app.Get("/", func(req *Req, res Res) {
-		res.Send("Hello World")
-	})
-
-	app.Post("/", func(req *Req, res Res) {
-		res.Send("Hello World2")
-	})
-
-	ts, e, _ := newTestServer(t, app)
+	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
 
+	app.Get("/", func(req *Req, res Res) { res.Send("Hello World") })
 	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("Hello World")
-	e.POST("/").Expect().Status(http.StatusOK).Text().Equal("Hello World2")
 }
 
 func TestJson(t *testing.T) {
@@ -46,15 +62,10 @@ func TestJson(t *testing.T) {
 			[]string{"a", "b"},          // slice
 			[1]int{1},                   // array
 		} {
-			app := NewGor()
-
-			app.Get("/", func(req *Req, res Res) {
-				res.Json(v)
-			})
-
-			ts, e, _ := newTestServer(t, app)
+			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()
 
+			app.Get("/", func(req *Req, res Res) { res.Json(v) })
 			e.GET("/").Expect().Status(http.StatusOK).JSON().Equal(v)
 		}
 	}
@@ -79,15 +90,10 @@ func TestJson(t *testing.T) {
 			"[response type unsupported] [string] string\n":     "string",      // string
 			"[response type unsupported] [bool] false\n":        false,         // bool
 		} {
-			app := NewGor()
-
-			app.Get("/", func(req *Req, res Res) {
-				res.Json(v)
-			})
-
-			ts, e, _ := newTestServer(t, app)
+			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()
 
+			app.Get("/", func(req *Req, res Res) { res.Json(v) })
 			e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal(msg)
 		}
 	}
