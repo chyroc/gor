@@ -15,6 +15,8 @@ jobs:
     working_directory: /go/src/github.com/Chyroc/gor
     steps:
       - checkout
+      - run: echo $PWD
+      - run: echo ls -al
       - run: go get -u github.com/rakyll/gotest
       - run: go get -u github.com/alecthomas/gometalinter
       - run: gometalinter --install
