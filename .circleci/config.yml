@@ -16,7 +16,7 @@ jobs:
     steps:
       - checkout
       - run: go get -u github.com/golang/lint/golint
-      - run: golint $(go list ./... | grep -v /vendor/)
+      - run: if ["$(golint $(go list ./... | grep -v /vendor/))" == ""]; then exit 0; else exit 1; fi
       - run: go get -u github.com/rakyll/gotest
       - run: make checkstyle
       - run: make
