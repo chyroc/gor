@@ -8,7 +8,5 @@ type Req struct {
 }
 
 func httpRequestToReq(r *http.Request) *Req {
-	return &Req{
-
-	}
+	return &Req{}
 }

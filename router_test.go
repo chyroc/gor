@@ -7,7 +7,7 @@ import (
 func TestNewRouter(t *testing.T) {
 	app := NewGor()
 
-	app.Get("/", func(req Req, res Res) {
+	app.Get("/", func(req *Req, res Res) {
 		res.Send("Hello World")
 	})
 

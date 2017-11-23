@@ -8,11 +8,8 @@ type Res struct {
 //ResponseWriter, *Request
 
 func httpResponseWriterToRes(r http.ResponseWriter) Res {
-	return Res{
-
-	}
+	return Res{}
 }
-
 
 func (req *Req) Header() http.Header {
 	return make(http.Header)

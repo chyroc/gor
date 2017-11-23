@@ -1,8 +1,8 @@
 package gor
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
 )
 
 // Router router of api
@@ -13,7 +13,7 @@ type Router interface {
 
 type HandlerFunc func(*Req, Res)
 
-func stdHandler(h HandlerFunc) func (w http.ResponseWriter, r *http.Request) {
+func stdHandler(h HandlerFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 	}
@@ -42,7 +42,7 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
 	if handle, ok := g.handlers[httpMethod+path]; ok {
-		stdHandler(handle)(w,r)
+		stdHandler(handle)(w, r)
 		//handle(httpRequestToReq(r), httpResponseWriterToRes(w))
 		return
 	}
