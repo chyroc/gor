@@ -67,7 +67,7 @@ func (g *Gor) Options(pattern string, h HandlerFunc) {
 	g.handlers[http.MethodOptions+pattern] = h
 }
 
-// 1Trace http trace method
+// Trace http trace method
 func (g *Gor) Trace(pattern string, h HandlerFunc) {
 	g.handlers[http.MethodTrace+pattern] = h
 }
@@ -84,7 +84,6 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprintf(w, http.StatusText(http.StatusNotFound))
-	return
 }
 
 // Listen bind port and start server
