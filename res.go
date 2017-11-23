@@ -22,8 +22,7 @@ func (res *Res) Send(v string) {
 }
 
 func (res *Res) errResponseTypeUnsupported(vtype string, v interface{}) {
-	res.WriteHeader(http.StatusInternalServerError)
-	fmt.Fprintf(res, "[%s] [%s] %+v", ErrResponseTypeUnsupported, vtype, v)
+	http.Error(res, fmt.Sprintf("[%s] [%s] %+v", ErrResponseTypeUnsupported, vtype, v), http.StatusInternalServerError)
 }
 
 func (res *Res) Json(v interface{}) {

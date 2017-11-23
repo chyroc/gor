@@ -38,13 +38,13 @@ func TestSend(t *testing.T) {
 func TestJson(t *testing.T) {
 	{
 		for _, v := range []interface{}{
-			map[string]string{"1": "2"},       // map
-			[]string{"a", "b"},                // slice
-			[1]int{1},                         // array
 			struct {
 				Name     string `json:"name"`
 				unExport string
 			}{Name: "chyroc", unExport: "24"}, // struct
+			map[string]string{"1": "2"}, // map
+			[]string{"a", "b"},          // slice
+			[1]int{1},                   // array
 		} {
 			app := NewGor()
 
@@ -61,23 +61,23 @@ func TestJson(t *testing.T) {
 	{
 		// todo :Uintptr Func Chan Interface Ptr
 		for msg, v := range map[string]interface{}{
-			"[response type unsupported] [nil] <nil>":         nil,           // nil
-			"[response type unsupported] [int] 1":             1,             // int
-			"[response type unsupported] [int8] 1":            int8(1),       // int8
-			"[response type unsupported] [int16] 1":           int16(1),      // int16
-			"[response type unsupported] [int32] 1":           int32(1),      // int32
-			"[response type unsupported] [int64] 1":           int64(1),      // int64
-			"[response type unsupported] [uint] 1":            uint(1),       // uint
-			"[response type unsupported] [uint8] 1":           uint8(1),      // uint8
-			"[response type unsupported] [uint16] 1":          uint16(1),     // uint16
-			"[response type unsupported] [uint32] 1":          uint32(1),     // uint32
-			"[response type unsupported] [uint64] 1":          uint64(1),     // uint64
-			"[response type unsupported] [float32] 1.1":       float32(1.1),  // float32
-			"[response type unsupported] [float64] 1.1":       float64(1.1),  // float64
-			"[response type unsupported] [complex64] (1+0i)":  complex64(1),  // complex64
-			"[response type unsupported] [complex128] (1+0i)": complex128(1), // complex128
-			"[response type unsupported] [string] string":     "string",      // string
-			"[response type unsupported] [bool] false":        false,         // bool
+			"[response type unsupported] [nil] <nil>\n":         nil,           // nil
+			"[response type unsupported] [int] 1\n":             1,             // int
+			"[response type unsupported] [int8] 1\n":            int8(1),       // int8
+			"[response type unsupported] [int16] 1\n":           int16(1),      // int16
+			"[response type unsupported] [int32] 1\n":           int32(1),      // int32
+			"[response type unsupported] [int64] 1\n":           int64(1),      // int64
+			"[response type unsupported] [uint] 1\n":            uint(1),       // uint
+			"[response type unsupported] [uint8] 1\n":           uint8(1),      // uint8
+			"[response type unsupported] [uint16] 1\n":          uint16(1),     // uint16
+			"[response type unsupported] [uint32] 1\n":          uint32(1),     // uint32
+			"[response type unsupported] [uint64] 1\n":          uint64(1),     // uint64
+			"[response type unsupported] [float32] 1.1\n":       float32(1.1),  // float32
+			"[response type unsupported] [float64] 1.1\n":       float64(1.1),  // float64
+			"[response type unsupported] [complex64] (1+0i)\n":  complex64(1),  // complex64
+			"[response type unsupported] [complex128] (1+0i)\n": complex128(1), // complex128
+			"[response type unsupported] [string] string\n":     "string",      // string
+			"[response type unsupported] [bool] false\n":        false,         // bool
 		} {
 			app := NewGor()
 
