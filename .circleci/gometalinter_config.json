@@ -1,0 +1,33 @@
+{
+  "Vendor": true,
+  "DisableAll": true,
+  "Enable": [
+    "deadcode",
+    "gas",
+    "goconst",
+    "gocyclo",
+    "goimports",
+    "golint",
+    "gotype",
+    "gotypex",
+    "ineffassign",
+    "interfacer",
+    "maligned",
+    "megacheck",
+    "misspell",
+    "nakedret",
+    "safesql",
+    "structcheck",
+    "unconvert",
+    "unparam",
+    "varcheck",
+    "vet"
+  ],
+  "Exclude": [
+    "examples"
+  ]
+}
+
+// lll
+// errcheck
+// dupl
