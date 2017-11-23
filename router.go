@@ -28,8 +28,36 @@ func (g *Gor) Get(pattern string, h HandlerFunc) {
 	g.handlers[http.MethodGet+pattern] = h
 }
 
+func (g *Gor) Head(pattern string, h HandlerFunc) {
+	g.handlers[http.MethodHead+pattern] = h
+}
+
 func (g *Gor) Post(pattern string, h HandlerFunc) {
 	g.handlers[http.MethodPost+pattern] = h
+}
+
+func (g *Gor) Put(pattern string, h HandlerFunc) {
+	g.handlers[http.MethodPut+pattern] = h
+}
+
+func (g *Gor) Patch(pattern string, h HandlerFunc) {
+	g.handlers[http.MethodPatch+pattern] = h
+}
+
+func (g *Gor) Delete(pattern string, h HandlerFunc) {
+	g.handlers[http.MethodDelete+pattern] = h
+}
+
+func (g *Gor) Connect(pattern string, h HandlerFunc) {
+	g.handlers[http.MethodConnect+pattern] = h
+}
+
+func (g *Gor) Options(pattern string, h HandlerFunc) {
+	g.handlers[http.MethodOptions+pattern] = h
+}
+
+func (g *Gor) Trace(pattern string, h HandlerFunc) {
+	g.handlers[http.MethodTrace+pattern] = h
 }
 
 func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
