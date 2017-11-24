@@ -9,17 +9,20 @@ import (
 func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	httpMethod := r.Method
 	path := r.URL.Path
+	route := httpMethod + path
 	req, res := httpRequestToReq(r), httpResponseWriterToRes(w)
 
-	if handle, ok := g.handlers[httpMethod+path]; ok {
-		for i := 0; i <= g.midWithPath[httpMethod+path]; i++ {
+	// normal method
+	if handle, ok := g.handlers[route]; ok {
+		for i := 0; i <= g.midWithPath[route]; i++ {
 			g.middlewares[i](g).ServeHTTP(w, r)
 		}
 		handle(req, res)
 		return
 	}
 
-	if handles, ok := g.ttt[httpMethod+path]; ok {
+	// todo method with next
+	if handles, ok := g.ttt[route]; ok {
 		for _, handle := range handles {
 			handle(req, res)
 			fmt.Printf("req3 %s \n", req.context)
@@ -27,8 +30,7 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprintf(w, http.StatusText(http.StatusNotFound))
+	res.SendStatus(http.StatusNotFound)
 }
 
 // Use add middlewares

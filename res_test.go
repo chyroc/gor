@@ -3,6 +3,7 @@ package gor
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/gavv/httpexpect"
 )
@@ -15,8 +16,7 @@ func TestStatus(t *testing.T) {
 	e.GET("/").Expect().Status(http.StatusAccepted).Text().Equal("Hello World")
 
 	app.Get("/", func(req *Req, res Res) { res.Status(-1).Send("Hello World") })
-	e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\nHello World")
-	// todo
+	e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\n")
 }
 
 func TestSendStatus(t *testing.T) {
@@ -28,7 +28,6 @@ func TestSendStatus(t *testing.T) {
 
 	app.Get("/", func(req *Req, res Res) { res.SendStatus(-1) })
 	e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\n")
-	// todo
 }
 
 func TestSend(t *testing.T) {
@@ -99,6 +98,37 @@ func TestRedirect(t *testing.T) {
 		BaseURL:  ts.URL,
 		Reporter: httpexpect.NewAssertReporter(t),
 	}).GET("/").Expect().Status(http.StatusFound).Text().Equal("Found. Redirecting to /b")
+}
+
+func TestAddHeader(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Get("/", func(req *Req, res Res) {
+		res.AddHeader("h", "h1")
+		res.AddHeader("h", "h2")
+	})
+	e.GET("/").Expect().Status(http.StatusOK).Headers().ValueEqual("H", []string{"h1", "h2"})
+}
+
+func TestSetCookie(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Get("/1", func(req *Req, res Res) { res.SetCookie("c", "c1", Cookie{}, Cookie{}) })
+	app.Get("/2", func(req *Req, res Res) { res.SetCookie("c", "c1", Cookie{}) })
+	ti := time.Now().Add(time.Minute)
+	app.Get("/3", func(req *Req, res Res) {
+		res.SetCookie("c", "c1", Cookie{
+			Path:    "/",
+			Expires: time.Unix(int64(ti.Second()), 0),
+		})
+	})
+
+	e.GET("/1").Expect().Status(http.StatusInternalServerError).Text().Equal("only support one cookie option\n")
+	e.GET("/2").Expect().Status(http.StatusOK).Cookie("c").Value().Equal("c1")
+	e.GET("/3").Expect().Status(http.StatusOK).Cookie("c").Path().Equal("/")
+	e.GET("/3").Expect().Status(http.StatusOK).Cookie("c").Expires().Equal(time.Unix(int64(ti.Second()), 0))
 }
 
 func TestEnd(t *testing.T) {
