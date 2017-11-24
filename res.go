@@ -24,8 +24,17 @@ func (res *Res) errResponseTypeUnsupported(vtype string, v interface{}) {
 
 // Send Send a response
 func (res *Res) Status(code int) *Res {
+	if http.StatusText(code) == "" {
+		http.Error(res, ErrHTTPStatusCodeInvalid.Error(), http.StatusInternalServerError)
+		return res
+	}
 	res.WriteHeader(code)
 	return res
+}
+
+// Send Send a response with text
+func (res *Res) SendStatus(code int) {
+	res.Status(code).Send(http.StatusText(code))
 }
 
 // Send Send a response

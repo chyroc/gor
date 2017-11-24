@@ -9,4 +9,6 @@ var (
 	ErrResponseTypeUnsupported = errors.New("response type unsupported")
 	// ErrJSONMarshal is json marshal error.
 	ErrJSONMarshal = errors.New("json marshal err")
+	// ErrHTTPStatusCodeInvalid is given http status code is invalid error.
+	ErrHTTPStatusCodeInvalid = errors.New("http status code is invalid")
 )

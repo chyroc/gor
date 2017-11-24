@@ -13,6 +13,22 @@ func TestStatus(t *testing.T) {
 
 	app.Get("/", func(req *Req, res Res) { res.Status(http.StatusAccepted).Send("Hello World") })
 	e.GET("/").Expect().Status(http.StatusAccepted).Text().Equal("Hello World")
+
+	app.Get("/", func(req *Req, res Res) { res.Status(-1).Send("Hello World") })
+	e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\nHello World")
+	// todo
+}
+
+func TestSendStatus(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Get("/", func(req *Req, res Res) { res.SendStatus(http.StatusAccepted) })
+	e.GET("/").Expect().Status(http.StatusAccepted).Text().Equal("Accepted")
+
+	app.Get("/", func(req *Req, res Res) { res.SendStatus(-1) })
+	e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\n")
+	// todo
 }
 
 func TestSend(t *testing.T) {
