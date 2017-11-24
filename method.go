@@ -7,6 +7,14 @@ import (
 // HandlerFunc gor handler func like http.HandlerFunc func(ResponseWriter, *Request)
 type HandlerFunc func(*Req, Res)
 
+func (h *HandlerFunc) ServeHTTP(w http.ResponseWriter, res *http.Request) {
+	// todo
+}
+
+func (h *HandlerFunc) Next() {
+
+}
+
 // Get http get method
 func (g *Gor) Get(pattern string, h HandlerFunc) {
 	g.handlers[http.MethodGet+pattern] = h

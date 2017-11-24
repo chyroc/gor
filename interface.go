@@ -22,7 +22,7 @@ type normalMethod interface {
 }
 
 type methodWithNext interface {
-	GetWithNext(pattern string, h HandlerFuncWithNext)
+	GetWithNext(pattern string, hs ...HandlerFuncWithNext)
 	HeadWithNext(pattern string, h HandlerFuncWithNext)
 	PostWithNext(pattern string, h HandlerFuncWithNext)
 	PutWithNext(pattern string, h HandlerFuncWithNext)

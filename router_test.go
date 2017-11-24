@@ -51,16 +51,16 @@ func TestSend(t *testing.T) {
 	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("Hello World")
 }
 
-func TestJson(t *testing.T) {
+func TestJSON(t *testing.T) {
 	{
 		for _, v := range []interface{}{
 			struct {
 				Name     string `json:"name"`
 				unExport string
 			}{Name: "chyroc", unExport: "24"}, // struct
-			map[string]string{"1": "2"}, // map
-			[]string{"a", "b"},          // slice
-			[1]int{1},                   // array
+			map[string]string{"1": "2"},       // map
+			[]string{"a", "b"},                // slice
+			[1]int{1},                         // array
 		} {
 			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()
@@ -97,4 +97,18 @@ func TestJson(t *testing.T) {
 			e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal(msg)
 		}
 	}
+}
+
+func TestNext(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.GetWithNext("/", func(req *Req, res Res, next Next) {
+		req = req.AddContext("a", "a")
+	}, func(req *Req, res Res, next Next) {
+		//fmt.Printf("next2\n")
+	})
+
+	e.GET("/").Expect().Status(http.StatusOK)
+
 }

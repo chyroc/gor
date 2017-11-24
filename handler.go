@@ -15,6 +15,16 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if handles, ok := g.ttt[httpMethod+path]; ok {
+		for _, h := range handles {
+
+			h(httpRequestToReq(r), httpResponseWriterToRes(w), Next{})
+			fmt.Printf("a %s \n", r.Context().Value("a"))
+			//	todo
+		}
+		return
+	}
+
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprintf(w, http.StatusText(http.StatusNotFound))
 }
@@ -23,3 +33,4 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (g *Gor) Listen(addr string) error {
 	return http.ListenAndServe(addr, g)
 }
+
