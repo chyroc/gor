@@ -23,6 +23,21 @@ func (res *Res) errResponseTypeUnsupported(vtype string, v interface{}) {
 }
 
 // Send Send a response
+func (res *Res) Status(code int) *Res {
+	if http.StatusText(code) == "" {
+		http.Error(res, ErrHTTPStatusCodeInvalid.Error(), http.StatusInternalServerError)
+		return res
+	}
+	res.WriteHeader(code)
+	return res
+}
+
+// Send Send a response with text
+func (res *Res) SendStatus(code int) {
+	res.Status(code).Send(http.StatusText(code))
+}
+
+// Send Send a response
 func (res *Res) Send(v string) {
 	res.Write([]byte(v))
 }
@@ -52,4 +67,15 @@ func (res *Res) JSON(v interface{}) {
 
 	res.Header().Set("Content-Type", "application/json")
 	res.Write(b)
+}
+
+// Redirect Redirect to another url
+func (res *Res) Redirect(path string) {
+	res.Header().Set("Location", path)
+	res.WriteHeader(http.StatusFound)
+	res.Write([]byte(fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)))
+}
+
+// End end the request
+func (res *Res) End() {
 }
