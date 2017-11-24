@@ -60,3 +60,7 @@ func (res *Res) Redirect(path string) {
 	res.WriteHeader(http.StatusFound)
 	res.Write([]byte(fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)))
 }
+
+// End end the request
+func (res *Res) End() {
+}

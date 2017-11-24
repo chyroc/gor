@@ -1,9 +1,10 @@
 package gor
 
 import (
-	"github.com/gavv/httpexpect"
 	"net/http"
 	"testing"
+
+	"github.com/gavv/httpexpect"
 )
 
 func TestSend(t *testing.T) {
@@ -66,11 +67,6 @@ func TestRedirect(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
 
-	//http.Client{
-	//	CheckRedirect: func(req *http.Request, via []*http.Request) error {
-	//		return http.ErrUseLastResponse
-	//	},
-	//}
 	app.Get("/", func(req *Req, res Res) { res.Redirect("/b") })
 	app.Get("/b", func(req *Req, res Res) { res.Send("b") })
 	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("b")
@@ -79,4 +75,12 @@ func TestRedirect(t *testing.T) {
 		BaseURL:  ts.URL,
 		Reporter: httpexpect.NewAssertReporter(t),
 	}).GET("/").Expect().Status(http.StatusFound).Text().Equal("Found. Redirecting to /b")
+}
+
+func TestEnd(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Get("/", func(req *Req, res Res) { res.End() })
+	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("")
 }
