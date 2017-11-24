@@ -1,23 +1,27 @@
 package gor
 
 import (
-	"net/http"
 	"context"
+	"net/http"
 )
 
 // Req is http Request struct
 type Req struct {
-	httpr *http.Request
+	httpr   *http.Request
+	context context.Context
 }
 
 func httpRequestToReq(httpRequest *http.Request) *Req {
 	return &Req{
 		httpRequest,
+		httpRequest.Context(),
 	}
 }
 
-func (req *Req) AddContext(key, val interface{}) *Req {
-	newContext := context.WithValue(req.httpr.Context(), key, val)
-	req = httpRequestToReq(req.httpr.WithContext(newContext))
-	return req
+func (req *Req) AddContext(key, val interface{}) {
+	req.context = context.WithValue(req.context, key, val)
+}
+
+func (req *Req) GetContext(key interface{}) interface{} {
+	return req.context.Value(key)
 }

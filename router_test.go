@@ -1,6 +1,7 @@
 package gor
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -99,16 +100,24 @@ func TestJSON(t *testing.T) {
 	}
 }
 
+func testMid(g *Gor) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%s\n", g.midWithPath)
+	})
+}
+
 func TestNext(t *testing.T) {
-	app, ts, e, _ := newTestServer(t)
+	app, ts, e, as := newTestServer(t)
 	defer ts.Close()
 
-	app.GetWithNext("/", func(req *Req, res Res, next Next) {
-		req = req.AddContext("a", "a")
-	}, func(req *Req, res Res, next Next) {
-		//fmt.Printf("next2\n")
-	})
+	app.Use(testMid)
+	app.Get("/", func(req *Req, res Res) { res.Send("11") })
+	app.Use(testMid)
+	app.Post("/2", func(req *Req, res Res) { res.Send("22") })
 
-	e.GET("/").Expect().Status(http.StatusOK)
+	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("11")
+	e.POST("/2").Expect().Status(http.StatusOK).Text().Equal("22")
 
+	as.Len(app.middlewares, 2)
+	as.Equal(map[string]int{"GET/": 0, "POST/2": 1}, app.midWithPath)
 }

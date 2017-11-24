@@ -12,7 +12,7 @@ func (hn *HandlerFuncWithNext) ServeHTTP(w http.ResponseWriter, res *http.Reques
 }
 
 // GetWithNext http get method
-func (g *Gor) GetWithNext(pattern string, h ...HandlerFuncWithNext) {
+func (g *Gor) GetWithNext(pattern string, h ...HandlerFunc) {
 	//g.handlersWithNext[http.MethodGet+pattern] = h
 	g.ttt[http.MethodGet+pattern] = h
 }

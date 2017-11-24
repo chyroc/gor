@@ -15,47 +15,53 @@ func (h *HandlerFunc) Next() {
 
 }
 
+func (g *Gor) handlerRoute(method string, pattern string, h HandlerFunc) {
+	route := method + pattern
+	g.handlers[route] = h
+	g.midWithPath[route] = len(g.middlewares) - 1
+}
+
 // Get http get method
 func (g *Gor) Get(pattern string, h HandlerFunc) {
-	g.handlers[http.MethodGet+pattern] = h
+	g.handlerRoute(http.MethodGet, pattern, h)
 }
 
 // Head http head method
 func (g *Gor) Head(pattern string, h HandlerFunc) {
-	g.handlers[http.MethodHead+pattern] = h
+	g.handlerRoute(http.MethodHead, pattern, h)
 }
 
 // Post http post method
 func (g *Gor) Post(pattern string, h HandlerFunc) {
-	g.handlers[http.MethodPost+pattern] = h
+	g.handlerRoute(http.MethodPost, pattern, h)
 }
 
 // Put http put method
 func (g *Gor) Put(pattern string, h HandlerFunc) {
-	g.handlers[http.MethodPut+pattern] = h
+	g.handlerRoute(http.MethodPut, pattern, h)
 }
 
 // Patch http patch method
 func (g *Gor) Patch(pattern string, h HandlerFunc) {
-	g.handlers[http.MethodPatch+pattern] = h
+	g.handlerRoute(http.MethodPatch, pattern, h)
 }
 
 // Delete http delete method
 func (g *Gor) Delete(pattern string, h HandlerFunc) {
-	g.handlers[http.MethodDelete+pattern] = h
+	g.handlerRoute(http.MethodDelete, pattern, h)
 }
 
 // Connect http connect method
 func (g *Gor) Connect(pattern string, h HandlerFunc) {
-	g.handlers[http.MethodConnect+pattern] = h
+	g.handlerRoute(http.MethodConnect, pattern, h)
 }
 
 // Options http options method
 func (g *Gor) Options(pattern string, h HandlerFunc) {
-	g.handlers[http.MethodOptions+pattern] = h
+	g.handlerRoute(http.MethodOptions, pattern, h)
 }
 
 // Trace http trace method
 func (g *Gor) Trace(pattern string, h HandlerFunc) {
-	g.handlers[http.MethodTrace+pattern] = h
+	g.handlerRoute(http.MethodTrace, pattern, h)
 }
