@@ -53,3 +53,10 @@ func (res *Res) JSON(v interface{}) {
 	res.Header().Set("Content-Type", "application/json")
 	res.Write(b)
 }
+
+// Redirect Redirect to another url
+func (res *Res) Redirect(path string) {
+	res.Header().Set("Location", path)
+	res.WriteHeader(http.StatusFound)
+	res.Write([]byte(fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)))
+}
