@@ -22,7 +22,7 @@ func (res *Res) errResponseTypeUnsupported(vtype string, v interface{}) {
 	http.Error(res, fmt.Sprintf("[%s] [%s] %+v", ErrResponseTypeUnsupported, vtype, v), http.StatusInternalServerError)
 }
 
-// Send Send a response
+// Status set response http status code
 func (res *Res) Status(code int) *Res {
 	if http.StatusText(code) == "" {
 		http.Error(res, ErrHTTPStatusCodeInvalid.Error(), http.StatusInternalServerError)
@@ -32,7 +32,7 @@ func (res *Res) Status(code int) *Res {
 	return res
 }
 
-// Send Send a response with text
+// SendStatus set response http status code with its text
 func (res *Res) SendStatus(code int) {
 	res.Status(code).Send(http.StatusText(code))
 }
