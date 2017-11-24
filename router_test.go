@@ -1,6 +1,7 @@
 package gor
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -51,7 +52,7 @@ func TestSend(t *testing.T) {
 	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("Hello World")
 }
 
-func TestJson(t *testing.T) {
+func TestJSON(t *testing.T) {
 	{
 		for _, v := range []interface{}{
 			struct {
@@ -97,4 +98,26 @@ func TestJson(t *testing.T) {
 			e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal(msg)
 		}
 	}
+}
+
+func testMid(g *Gor) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%+v\n", g.midWithPath)
+	})
+}
+
+func TestNext(t *testing.T) {
+	app, ts, e, as := newTestServer(t)
+	defer ts.Close()
+
+	app.Use(testMid)
+	app.Get("/", func(req *Req, res Res) { res.Send("11") })
+	app.Use(testMid)
+	app.Post("/2", func(req *Req, res Res) { res.Send("22") })
+
+	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("11")
+	e.POST("/2").Expect().Status(http.StatusOK).Text().Equal("22")
+
+	as.Len(app.middlewares, 2)
+	as.Equal(map[string]int{"GET/": 0, "POST/2": 1}, app.midWithPath)
 }
