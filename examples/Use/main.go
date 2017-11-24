@@ -6,12 +6,9 @@ import (
 	"net/http"
 )
 
-func Logger(next http.Handler) http.Handler {
+func Logger(g *gor.Gor) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-
 		fmt.Printf("logger")
-
-		//next.ServeHTTP(w, r)
 	}
 
 	return http.HandlerFunc(fn)

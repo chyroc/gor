@@ -59,9 +59,9 @@ func TestJSON(t *testing.T) {
 				Name     string `json:"name"`
 				unExport string
 			}{Name: "chyroc", unExport: "24"}, // struct
-			map[string]string{"1": "2"},       // map
-			[]string{"a", "b"},                // slice
-			[1]int{1},                         // array
+			map[string]string{"1": "2"}, // map
+			[]string{"a", "b"},          // slice
+			[1]int{1},                   // array
 		} {
 			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()
@@ -102,7 +102,7 @@ func TestJSON(t *testing.T) {
 
 func testMid(g *Gor) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%s\n", g.midWithPath)
+		fmt.Printf("%+v\n", g.midWithPath)
 	})
 }
 

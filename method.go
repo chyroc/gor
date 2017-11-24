@@ -7,14 +7,6 @@ import (
 // HandlerFunc gor handler func like http.HandlerFunc func(ResponseWriter, *Request)
 type HandlerFunc func(*Req, Res)
 
-func (h *HandlerFunc) ServeHTTP(w http.ResponseWriter, res *http.Request) {
-	// todo
-}
-
-func (h *HandlerFunc) Next() {
-
-}
-
 func (g *Gor) handlerRoute(method string, pattern string, h HandlerFunc) {
 	route := method + pattern
 	g.handlers[route] = h

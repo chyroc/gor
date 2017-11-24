@@ -18,10 +18,12 @@ func httpRequestToReq(httpRequest *http.Request) *Req {
 	}
 }
 
+// AddContext add value to gor context
 func (req *Req) AddContext(key, val interface{}) {
 	req.context = context.WithValue(req.context, key, val)
 }
 
+// GetContext get context from gor by key
 func (req *Req) GetContext(key interface{}) interface{} {
 	return req.context.Value(key)
 }

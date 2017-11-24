@@ -7,10 +7,6 @@ import (
 // HandlerFuncWithNext gor handler func like http.HandlerFunc func(ResponseWriter, *Request) but add next func
 type HandlerFuncWithNext func(*Req, Res, Next)
 
-func (hn *HandlerFuncWithNext) ServeHTTP(w http.ResponseWriter, res *http.Request) {
-	// todo
-}
-
 // GetWithNext http get method
 func (g *Gor) GetWithNext(pattern string, h ...HandlerFunc) {
 	//g.handlersWithNext[http.MethodGet+pattern] = h
