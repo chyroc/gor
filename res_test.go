@@ -7,6 +7,14 @@ import (
 	"github.com/gavv/httpexpect"
 )
 
+func TestStatus(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Get("/", func(req *Req, res Res) { res.Status(http.StatusAccepted).Send("Hello World") })
+	e.GET("/").Expect().Status(http.StatusAccepted).Text().Equal("Hello World")
+}
+
 func TestSend(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()

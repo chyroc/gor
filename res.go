@@ -23,6 +23,12 @@ func (res *Res) errResponseTypeUnsupported(vtype string, v interface{}) {
 }
 
 // Send Send a response
+func (res *Res) Status(code int) *Res {
+	res.WriteHeader(code)
+	return res
+}
+
+// Send Send a response
 func (res *Res) Send(v string) {
 	res.Write([]byte(v))
 }
