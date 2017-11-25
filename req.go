@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // Req is http Request struct
@@ -11,8 +12,9 @@ type Req struct {
 	r       *http.Request
 	context context.Context
 
-	Method string
-	Query  map[string][]string
+	Method   string
+	Query    map[string][]string
+	Hostname string
 }
 
 func getQuery(r *http.Request) (map[string][]string, error) {
@@ -27,6 +29,14 @@ func getQuery(r *http.Request) (map[string][]string, error) {
 	return query, nil
 }
 
+func getHostname(r *http.Request) string {
+	hostPort := strings.Split(r.Host, ":")
+	if len(hostPort) > 0 {
+		return hostPort[0]
+	}
+	return ""
+}
+
 func httpRequestToReq(r *http.Request) (*Req, error) {
 	query, err := getQuery(r)
 	if err != nil {
@@ -37,8 +47,9 @@ func httpRequestToReq(r *http.Request) (*Req, error) {
 		r:       r,
 		context: r.Context(),
 
-		Method: r.Method,
-		Query:  query,
+		Method:   r.Method,
+		Query:    query,
+		Hostname: getHostname(r),
 	}, nil
 }
 
