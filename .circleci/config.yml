@@ -5,12 +5,9 @@ version: 2
 jobs:
   build:
     docker:
+      - image: circleci/golang:1.9
       - image: circleci/golang:1.8
-#      - image: circleci/mysql:5.7.18
-#        environment:
-#          MYSQL_DATABASE: "app"
-#          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-#          MYSQL_ROOT_HOST: "%"
+      - image: circleci/golang:1.7
 
     working_directory: /go/src/github.com/Chyroc/gor
     steps:
