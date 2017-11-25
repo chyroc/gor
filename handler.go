@@ -10,7 +10,13 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	httpMethod := r.Method
 	path := r.URL.Path
 	route := httpMethod + path
-	req, res := httpRequestToReq(r), httpResponseWriterToRes(w)
+
+	res := httpResponseWriterToRes(w)
+	req, err := httpRequestToReq(r)
+	if err != nil {
+		res.Error(err.Error())
+		return
+	}
 
 	// normal method
 	if handle, ok := g.handlers[route]; ok {
