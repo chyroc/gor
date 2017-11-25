@@ -22,6 +22,7 @@ func (g *Gor) matchRouter(w http.ResponseWriter, r *http.Request, req *Req, res 
 				if route.routeParams[i].isParam {
 					req.Params[route.routeParams[i].name] = matchRoutes[i]
 				} else if route.routeParams[i].name != matchRoutes[i] {
+					match = false
 					break
 				}
 				match = true

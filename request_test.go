@@ -44,4 +44,12 @@ func TestParams(t *testing.T) {
 	e.GET("/b/user").Expect().Status(http.StatusNotFound).Text().Equal("Not Found")
 	e.GET("/b/user/name").Expect().Status(http.StatusOK).JSON().Equal(map[string]string{"user": "user", "name": "name"})
 	e.GET("/b/user/name/name").Expect().Status(http.StatusNotFound).Text().Equal("Not Found")
+
+	app.Get("/c/:user/noparam/:name", func(req *Req, res *Res) { res.JSON(req.Params) })
+	e.GET("/c").Expect().Status(http.StatusNotFound).Text().Equal("Not Found")
+	e.GET("/c/user").Expect().Status(http.StatusNotFound).Text().Equal("Not Found")
+	e.GET("/c/user/noparam").Expect().Status(http.StatusNotFound).Text().Equal("Not Found")
+	e.GET("/c/user/noparam/name").Expect().Status(http.StatusOK).JSON().Equal(map[string]string{"user": "user", "name": "name"})
+	e.GET("/c/user/no-match-param/name").Expect().Status(http.StatusNotFound).Text().Equal("Not Found")
+	e.GET("/c/user/noparam/name/name").Expect().Status(http.StatusNotFound).Text().Equal("Not Found")
 }
