@@ -5,7 +5,6 @@
     "deadcode",
     "gas",
     "goconst",
-    "gocyclo",
     "goimports",
     "golint",
     "gotype",
@@ -28,6 +27,7 @@
   ]
 }
 
+// gocyclo
 // lll
 // errcheck
 // dupl

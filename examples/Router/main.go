@@ -16,6 +16,11 @@ func Logger(g *gor.Gor) http.Handler {
 
 func main() {
 	app := gor.NewGor()
+	router := gor.NewRouter()
+
+	router.Use(func(req *gor.Req, res gor.Res) {
+		res.Send()
+	})
 
 	app.Use(Logger)
 	app.Get("/", func(req *gor.Req, res gor.Res) {

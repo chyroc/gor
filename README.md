@@ -15,7 +15,7 @@ import (
 func main() {
 	app := gor.NewGor()
 
-	app.Get("/", func(req *gor.Req, res gor.Res) {
+	app.Get("/", func(req *gor.Req, res *gor.Res) {
 		res.Send("Hello World")
 	})
 

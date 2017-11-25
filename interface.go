@@ -21,18 +21,14 @@ type normalMethod interface {
 	Trace(pattern string, h HandlerFunc)
 }
 
-type methodWithNext interface {
-	GetWithNext(pattern string, hs ...HandlerFunc)
-	HeadWithNext(pattern string, h HandlerFuncWithNext)
-	PostWithNext(pattern string, h HandlerFuncWithNext)
-	PutWithNext(pattern string, h HandlerFuncWithNext)
-	PatchWithNext(pattern string, h HandlerFuncWithNext)
-	DeleteWithNext(pattern string, h HandlerFuncWithNext)
-	ConnectWithNext(pattern string, h HandlerFuncWithNext)
-	OptionsWithNext(pattern string, h HandlerFuncWithNext)
-	TraceWithNext(pattern string, h HandlerFuncWithNext)
+type routerInterface interface {
+	All()
+	Method()
+	Param()
+	Route()
+	Use(middlewares ...HandlerFunc)
 }
 
 var _ gorInterface = (*Gor)(nil)
 var _ normalMethod = (*Gor)(nil)
-var _ methodWithNext = (*Gor)(nil)
+var _ routerInterface = (*Router)(nil)

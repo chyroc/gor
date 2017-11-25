@@ -1,16 +1,47 @@
 package gor
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
-// HandlerFunc gor handler func like http.HandlerFunc func(ResponseWriter, *Request)
-type HandlerFunc func(*Req, Res)
-
 func (g *Gor) handlerRoute(method string, pattern string, h HandlerFunc) {
-	route := method + pattern
-	g.handlers[route] = h
-	g.midWithPath[route] = len(g.middlewares) - 1
+	if !strings.HasPrefix(pattern, "/") {
+		panic("not start with /")
+	}
+
+	URL, err := url.Parse(pattern)
+	if err != nil {
+		panic(fmt.Sprintf("pattern invalid: %s", pattern))
+	}
+
+	paths := strings.Split(URL.Path[1:], "/")
+	var prepath string
+	if strings.HasPrefix(paths[0], ":") {
+		prepath = "/"
+	} else {
+		prepath = paths[0]
+		paths = paths[1:]
+	}
+
+	//g.midWithPath[route] = len(g.middlewares) - 1 todo
+	var rps []*routeParam
+	for _, i := range paths {
+		if strings.HasPrefix(i, ":") {
+			rps = append(rps, &routeParam{name: i[1:], isParam: true})
+		} else {
+			rps = append(rps, &routeParam{name: i, isParam: false})
+		}
+	}
+
+	g.routes = append(g.routes, &route{
+		method:      method,
+		handler:     h,
+		prepath:     prepath,
+		routeParams: rps,
+	})
 }
 
 // Get http get method
