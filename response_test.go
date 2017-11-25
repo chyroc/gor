@@ -62,6 +62,7 @@ func TestJSON(t *testing.T) {
 			map[string]string{"1": "2"}, // map
 			[]string{"a", "b"},          // slice
 			[1]int{1},                   // array
+			nil,                         //nil
 		} {
 			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()
@@ -73,7 +74,6 @@ func TestJSON(t *testing.T) {
 	{
 		// todo :Uintptr Func Chan Interface Ptr
 		for msg, v := range map[string]interface{}{
-			"[response type unsupported] [nil] <nil>\n":         nil,           // nil
 			"[response type unsupported] [int] 1\n":             1,             // int
 			"[response type unsupported] [int8] 1\n":            int8(1),       // int8
 			"[response type unsupported] [int16] 1\n":           int16(1),      // int16

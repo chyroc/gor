@@ -53,3 +53,15 @@ func TestParams(t *testing.T) {
 	e.GET("/c/user/no-match-param/name").Expect().Status(http.StatusNotFound).Text().Equal("Not Found")
 	e.GET("/c/user/noparam/name/name").Expect().Status(http.StatusNotFound).Text().Equal("Not Found")
 }
+
+func TestBody(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Post("/", func(req *Req, res *Res) {
+		res.JSON(map[string]interface{}{"json": req.Body.JSON, "form-data": req.Body.FormData, "form-url-encoded": req.Body.FormURLEncoded})
+	})
+	e.POST("/").WithJSON(map[string]string{"s": "d"}).Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"form-data": nil, "form-url-encoded": nil, "json": map[string]string{"s": "d"}})
+	e.POST("/").WithForm(map[string]string{"s": "d"}).Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"form-data": nil, "form-url-encoded": map[string][]string{"s": {"d"}}, "json": nil})
+	e.POST("/").WithMultipart().WithForm(map[string]string{"s": "d"}).Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"form-data": map[string][]string{"s": {"d"}}, "form-url-encoded": nil, "json": nil})
+}
