@@ -2,10 +2,19 @@ package gor
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+	"bytes"
 )
+
+type bodyData struct {
+	JSON           interface{}
+	FormURLEncoded map[string][]string
+	FormData       map[string][]string
+}
 
 // Req is http Request struct
 // <scheme>://<username>:<password>@<host>:<port>/<path>;<parameters>?<query>#<fragment>
@@ -19,7 +28,9 @@ type Req struct {
 
 	BaseURL     string
 	OriginalURL string
-	Params      map[string]string
+
+	Params map[string]string
+	Body   *bodyData
 }
 
 func getQuery(r *http.Request) (map[string][]string, error) {
@@ -50,8 +61,36 @@ func getOriginalURL(r *http.Request) string {
 	return r.URL.Path
 }
 
+func getBody(r *http.Request) (*bodyData, error) {
+	var t interface{}
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+
+	if err = json.Unmarshal(body, &t); err == nil {
+		return &bodyData{JSON: t}, nil
+	}
+
+	if err := r.ParseForm(); err == nil && r.PostForm.Encode() != "" {
+		return &bodyData{FormURLEncoded: r.PostForm}, nil
+	}
+
+	if err := r.ParseMultipartForm(2 ^ 10); err == nil {
+		return &bodyData{FormData: r.PostForm}, nil
+	}
+
+	return nil, nil
+}
+
 func httpRequestToReq(r *http.Request) (*Req, error) {
 	query, err := getQuery(r)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := getBody(r)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +105,9 @@ func httpRequestToReq(r *http.Request) (*Req, error) {
 
 		BaseURL:     getBaseURL(r),
 		OriginalURL: getOriginalURL(r),
-		Params:      make(map[string]string),
+
+		Params: make(map[string]string),
+		Body:   body,
 	}, nil
 }
 

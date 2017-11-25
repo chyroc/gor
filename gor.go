@@ -21,10 +21,8 @@ type route struct {
 
 // Gor gor framework core struct
 type Gor struct {
-	handlers    map[string]HandlerFunc
 	middlewares []func(g *Gor) http.Handler
 	midWithPath map[string]int
-	params      map[string][]string
 
 	routes []*route
 }
@@ -32,8 +30,6 @@ type Gor struct {
 // NewGor return Gor struct
 func NewGor() *Gor {
 	return &Gor{
-		handlers:    make(map[string]HandlerFunc),
 		midWithPath: make(map[string]int),
-		params:      make(map[string][]string),
 	}
 }

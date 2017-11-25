@@ -66,7 +66,8 @@ func (res *Res) JSON(v interface{}) {
 	}
 
 	if v == nil {
-		res.errResponseTypeUnsupported("nil", v)
+		res.Header().Set("Content-Type", "application/json")
+		res.Write([]byte("null"))
 		return
 	}
 
