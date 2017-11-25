@@ -1,13 +1,13 @@
 package gor
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
-	"bytes"
 )
 
 type bodyData struct {
