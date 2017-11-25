@@ -13,8 +13,8 @@ type Res struct {
 	exit bool
 }
 
-func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) Res {
-	return Res{
+func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) *Res {
+	return &Res{
 		httpResponseWriter,
 		false,
 	}
@@ -38,6 +38,10 @@ func (res *Res) Status(code int) *Res {
 
 // SendStatus set response http status code with its text
 func (res *Res) SendStatus(code int) {
+	if res.exit {
+		return
+	}
+
 	res.Status(code).Send(http.StatusText(code))
 }
 

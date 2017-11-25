@@ -1,24 +1,32 @@
 package gor
 
-import (
-	"net/http"
-)
-
-// Gor gor framework core struct
-type Gor struct {
-	handlers         map[string]HandlerFunc
-	handlersWithNext map[string]HandlerFuncWithNext
-	ttt              map[string][]HandlerFunc
-	middlewares      []func(g *Gor) http.Handler
-	midWithPath      map[string]int
+// Router router
+type Router struct {
+	middlewares []HandlerFunc
 }
 
-// NewGor return Gor struct
-func NewGor() *Gor {
-	return &Gor{
-		handlers:         make(map[string]HandlerFunc),
-		handlersWithNext: make(map[string]HandlerFuncWithNext),
-		ttt:              make(map[string][]HandlerFunc),
-		midWithPath:      make(map[string]int),
-	}
+// NewRouter return *Router
+func NewRouter() *Router {
+	return &Router{}
+}
+
+// All add a handler for all HTTP verbs to this route
+func (r *Router) All() {
+}
+
+// Method method
+func (r *Router) Method() {
+}
+
+// Param map the given param placeholder `name`(s) to the given callback.
+func (r *Router) Param() {
+}
+
+// Route Create a new Route for the given path.
+func (r *Router) Route() {
+}
+
+// Use use the given middleware function, with optional path, defaulting to "/"
+func (r *Router) Use(middlewares ...HandlerFunc) {
+	r.middlewares = append(r.middlewares, middlewares...)
 }

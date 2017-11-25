@@ -9,32 +9,45 @@ import (
 )
 
 func TestStatus(t *testing.T) {
-	app, ts, e, _ := newTestServer(t)
-	defer ts.Close()
+	{
+		app, ts, e, _ := newTestServer(t)
+		defer ts.Close()
 
-	app.Get("/", func(req *Req, res Res) { res.Status(http.StatusAccepted).Send("Hello World") })
-	e.GET("/").Expect().Status(http.StatusAccepted).Text().Equal("Hello World")
+		app.Get("/", func(req *Req, res *Res) { res.Status(http.StatusAccepted).Send("Hello World") })
+		e.GET("/").Expect().Status(http.StatusAccepted).Text().Equal("Hello World")
 
-	app.Get("/", func(req *Req, res Res) { res.Status(-1).Send("Hello World") })
-	e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\n")
+	}
+	{
+		app, ts, e, _ := newTestServer(t)
+		defer ts.Close()
+
+		app.Get("/", func(req *Req, res *Res) { res.Status(-1).Send("Hello World") })
+		e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\n")
+	}
 }
 
 func TestSendStatus(t *testing.T) {
-	app, ts, e, _ := newTestServer(t)
-	defer ts.Close()
+	{
+		app, ts, e, _ := newTestServer(t)
+		defer ts.Close()
 
-	app.Get("/", func(req *Req, res Res) { res.SendStatus(http.StatusAccepted) })
-	e.GET("/").Expect().Status(http.StatusAccepted).Text().Equal("Accepted")
+		app.Get("/", func(req *Req, res *Res) { res.SendStatus(http.StatusAccepted) })
+		e.GET("/").Expect().Status(http.StatusAccepted).Text().Equal("Accepted")
+	}
+	{
+		app, ts, e, _ := newTestServer(t)
+		defer ts.Close()
 
-	app.Get("/", func(req *Req, res Res) { res.SendStatus(-1) })
-	e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\n")
+		app.Get("/", func(req *Req, res *Res) { res.SendStatus(-1) })
+		e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\n")
+	}
 }
 
 func TestSend(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
 
-	app.Get("/", func(req *Req, res Res) { res.Send("Hello World") })
+	app.Get("/", func(req *Req, res *Res) { res.Send("Hello World") })
 	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("Hello World")
 }
 
@@ -42,9 +55,10 @@ func TestJSON(t *testing.T) {
 	{
 		for _, v := range []interface{}{
 			struct {
+				// struct
 				Name     string `json:"name"`
 				unExport string
-			}{Name: "chyroc", unExport: "24"}, // struct
+			}{Name: "chyroc", unExport: "24"},
 			map[string]string{"1": "2"}, // map
 			[]string{"a", "b"},          // slice
 			[1]int{1},                   // array
@@ -52,7 +66,7 @@ func TestJSON(t *testing.T) {
 			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()
 
-			app.Get("/", func(req *Req, res Res) { res.JSON(v) })
+			app.Get("/", func(req *Req, res *Res) { res.JSON(v) })
 			e.GET("/").Expect().Status(http.StatusOK).JSON().Equal(v)
 		}
 	}
@@ -80,7 +94,7 @@ func TestJSON(t *testing.T) {
 			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()
 
-			app.Get("/", func(req *Req, res Res) { res.JSON(v) })
+			app.Get("/", func(req *Req, res *Res) { res.JSON(v) })
 			e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal(msg)
 		}
 	}
@@ -90,8 +104,8 @@ func TestRedirect(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
 
-	app.Get("/", func(req *Req, res Res) { res.Redirect("/b") })
-	app.Get("/b", func(req *Req, res Res) { res.Send("b") })
+	app.Get("/", func(req *Req, res *Res) { res.Redirect("/b") })
+	app.Get("/b", func(req *Req, res *Res) { res.Send("b") })
 	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("b")
 	httpexpect.WithConfig(httpexpect.Config{
 		Client:   &http.Client{CheckRedirect: func(req *http.Request, via []*http.Request) error { return http.ErrUseLastResponse }},
@@ -104,7 +118,7 @@ func TestAddHeader(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
 
-	app.Get("/", func(req *Req, res Res) {
+	app.Get("/", func(req *Req, res *Res) {
 		res.AddHeader("h", "h1")
 		res.AddHeader("h", "h2")
 	})
@@ -115,10 +129,10 @@ func TestSetCookie(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
 
-	app.Get("/1", func(req *Req, res Res) { res.SetCookie("c", "c1", Cookie{}, Cookie{}) })
-	app.Get("/2", func(req *Req, res Res) { res.SetCookie("c", "c1", Cookie{}) })
+	app.Get("/1", func(req *Req, res *Res) { res.SetCookie("c", "c1", Cookie{}, Cookie{}) })
+	app.Get("/2", func(req *Req, res *Res) { res.SetCookie("c", "c1", Cookie{}) })
 	ti := time.Now().Add(time.Minute)
-	app.Get("/3", func(req *Req, res Res) {
+	app.Get("/3", func(req *Req, res *Res) {
 		res.SetCookie("c", "c1", Cookie{
 			Path:    "/",
 			Expires: time.Unix(int64(ti.Second()), 0),
@@ -135,6 +149,6 @@ func TestEnd(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
 
-	app.Get("/", func(req *Req, res Res) { res.End() })
+	app.Get("/", func(req *Req, res *Res) { res.End() })
 	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("")
 }

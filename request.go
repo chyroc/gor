@@ -8,6 +8,7 @@ import (
 )
 
 // Req is http Request struct
+// <scheme>://<username>:<password>@<host>:<port>/<path>;<parameters>?<query>#<fragment>
 type Req struct {
 	r       *http.Request
 	context context.Context
@@ -15,6 +16,10 @@ type Req struct {
 	Method   string
 	Query    map[string][]string
 	Hostname string
+
+	BaseURL     string
+	OriginalURL string
+	Params      map[string]string
 }
 
 func getQuery(r *http.Request) (map[string][]string, error) {
@@ -37,6 +42,14 @@ func getHostname(r *http.Request) string {
 	return ""
 }
 
+func getBaseURL(r *http.Request) string {
+	return strings.Split(r.URL.Path, "?")[0]
+}
+
+func getOriginalURL(r *http.Request) string {
+	return r.URL.Path
+}
+
 func httpRequestToReq(r *http.Request) (*Req, error) {
 	query, err := getQuery(r)
 	if err != nil {
@@ -50,6 +63,10 @@ func httpRequestToReq(r *http.Request) (*Req, error) {
 		Method:   r.Method,
 		Query:    query,
 		Hostname: getHostname(r),
+
+		BaseURL:     getBaseURL(r),
+		OriginalURL: getOriginalURL(r),
+		Params:      make(map[string]string),
 	}, nil
 }
 
