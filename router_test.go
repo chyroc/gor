@@ -209,7 +209,7 @@ func TestRouterUseWithParamsAndQuery(t *testing.T) {
 		router.Get("/:sub", func(req *Req, res *Res) { res.JSON(map[string]interface{}{"query": req.Query, "params": req.Params}) })
 		app.UseN("/main", router)
 
-		e.GET("/main/sub?a=1&b=2&b=3").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"query": map[string][]string{"a": {"1"}, "b": {"2", "3"}}, "params": map[string]string{"sub":"sub"}})
+		e.GET("/main/sub?a=1&b=2&b=3").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"query": map[string][]string{"a": {"1"}, "b": {"2", "3"}}, "params": map[string]string{"sub": "sub"}})
 	}
 	{
 		app, ts, e, _ := newTestServer(t)
@@ -219,6 +219,6 @@ func TestRouterUseWithParamsAndQuery(t *testing.T) {
 		router.Get("/sub/:sub", func(req *Req, res *Res) { res.JSON(map[string]interface{}{"query": req.Query, "params": req.Params}) })
 		app.UseN("/main", router)
 
-		e.GET("/main/sub/sub2?a=1&b=2&b=3").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"query": map[string][]string{"a": {"1"}, "b": {"2", "3"}}, "params": map[string]string{"sub":"sub2"}})
+		e.GET("/main/sub/sub2?a=1&b=2&b=3").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"query": map[string][]string{"a": {"1"}, "b": {"2", "3"}}, "params": map[string]string{"sub": "sub2"}})
 	}
 }
