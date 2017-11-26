@@ -163,6 +163,8 @@ func (r *Route) UseN(pattern string, m Mid) {
 		}
 		subRouteParams = append(subRouteParams, v.routeParams...)
 		r.routes = append(r.routes, &route{
+			method:      "ALL",
+			handler:     v.handler,
 			prepath:     patternPaths[0],
 			routeParams: subRouteParams,
 		})

@@ -1,6 +1,7 @@
 package gor
 
 import (
+	"net/http"
 	"testing"
 )
 
@@ -87,12 +88,12 @@ func TestRouterParams(t *testing.T) {
 func TestRouterUse(t *testing.T) {
 	// next 2: main router not exist
 	{
-		app, ts, _, as := newTestServer(t)
+		app, ts, e, as := newTestServer(t)
 		defer ts.Close()
 
 		// `/main/:sub` router with app+router
 		router := NewRouter()
-		router.Get("/sub", func(req *Req, res *Res) { res.End() })
+		router.Get("/sub", func(req *Req, res *Res) { res.Send("x") })
 		app.UseN("/main", router)
 
 		// router
@@ -105,14 +106,16 @@ func TestRouterUse(t *testing.T) {
 		as.Equal("main", app.routes[0].prepath)
 		as.Len(app.routes[0].routeParams, 1)
 		as.Equal(&routeParam{name: "sub", isParam: false}, app.routes[0].routeParams[0])
+
+		e.GET("/main/sub").Expect().Status(http.StatusOK).Text().Equal("x")
 	}
 	{
-		app, ts, _, as := newTestServer(t)
+		app, ts, e, as := newTestServer(t)
 		defer ts.Close()
 
 		// `/main/:sub` router with app+router
 		router := NewRouter()
-		router.Get("/:sub", func(req *Req, res *Res) { res.End() })
+		router.Get("/:sub", func(req *Req, res *Res) { res.JSON(req.Params) })
 		app.UseN("/main", router)
 
 		// router
@@ -126,15 +129,17 @@ func TestRouterUse(t *testing.T) {
 		as.Equal("main", app.routes[0].prepath)
 		as.Len(app.routes[0].routeParams, 1)
 		as.Equal(&routeParam{name: "sub", isParam: true}, app.routes[0].routeParams[0])
+
+		e.GET("/main/sub").Expect().Status(http.StatusOK).JSON().Equal(map[string]string{"sub": "sub"})
 	}
 	// next 2: main router exist
 	{
-		app, ts, _, as := newTestServer(t)
+		app, ts, e, as := newTestServer(t)
 		defer ts.Close()
 
-		app.Get("/main/not-sub", func(req *Req, res *Res) { res.End() })
+		app.Get("/main/not-sub", func(req *Req, res *Res) { res.Send("no-sub") })
 		router := NewRouter()
-		router.Get("/sub", func(req *Req, res *Res) { res.End() })
+		router.Get("/sub", func(req *Req, res *Res) { res.Send("sub") })
 		app.UseN("/main", router)
 
 		// router
@@ -150,14 +155,18 @@ func TestRouterUse(t *testing.T) {
 		as.Equal("main", app.routes[1].prepath)
 		as.Len(app.routes[1].routeParams, 1)
 		as.Equal(&routeParam{name: "sub", isParam: false}, app.routes[1].routeParams[0])
+
+		e.GET("/main/not-sub").Expect().Status(http.StatusOK).Text().Equal("no-sub")
+		e.GET("/main/sub").Expect().Status(http.StatusOK).Text().Equal("sub")
+
 	}
 	{
-		app, ts, _, as := newTestServer(t)
+		app, ts, e, as := newTestServer(t)
 		defer ts.Close()
 
-		app.Get("/main", func(req *Req, res *Res) { res.End() })
+		app.Get("/main", func(req *Req, res *Res) { res.Send("main") })
 		router := NewRouter()
-		router.Get("/:sub", func(req *Req, res *Res) { res.End() })
+		router.Get("/:sub", func(req *Req, res *Res) { res.JSON(req.Params) })
 		app.UseN("/main", router)
 
 		// router
@@ -173,5 +182,9 @@ func TestRouterUse(t *testing.T) {
 		as.Equal("main", app.routes[1].prepath)
 		as.Len(app.routes[1].routeParams, 1)
 		as.Equal(&routeParam{name: "sub", isParam: true}, app.routes[1].routeParams[0])
+
+		// todo main
+		e.GET("/main").Expect().Status(http.StatusOK).Text().Equal("main")
+		e.GET("/main/sub").Expect().Status(http.StatusOK).JSON().Equal(map[string]string{"sub": "sub"})
 	}
 }

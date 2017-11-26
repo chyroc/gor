@@ -6,16 +6,25 @@ import (
 )
 
 func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
+	for k, v := range routes {
+		debugPrintf("route[%d] %+v\n", k, v)
+		for k2, v2 := range v.routeParams {
+			debugPrintf("routeParams[%d] %+v\n", k2, v2)
+		}
+		debugPrintf("=====\n")
+	}
+
 	for _, v := range paths {
 		if strings.Contains(v, "/") {
 			panic("paths cannot contain /")
 		}
 	}
+
 	matchIndex := -1
 	for _, route := range routes {
 		matchIndex++
 		if route.prepath == paths[0] {
-			if method != "ALL" && route.method != method {
+			if method != "ALL" && route.method != "ALL" && route.method != method {
 				continue
 			}
 			matchRoutes := paths[1:]
