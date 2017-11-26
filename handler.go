@@ -5,22 +5,37 @@ import (
 	"strings"
 )
 
-func (g *Gor) matchRouter(w http.ResponseWriter, r *http.Request, req *Req, res *Res) *HandlerFunc {
-	routes := strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
+func splitRoute(r *http.Request) []string {
+	return strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
+}
 
-	for _, route := range g.routes {
-		if route.method == r.Method && route.prepath == routes[0] {
-			matchRoutes := routes[1:]
+func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
+	for _, v := range paths {
+		if strings.Contains(v, "/") {
+			panic("paths cannot contain /")
+		}
+	}
+	matchIndex := -1
+	for _, route := range routes {
+		matchIndex++
+		if route.prepath == paths[0] {
+			if method != "ALL" && route.method != method {
+				continue
+			}
+			matchRoutes := paths[1:]
 			if len(matchRoutes) != len(route.routeParams) {
 				continue
 			}
+
 			if len(route.routeParams) == 0 && len(matchRoutes) == 0 {
-				return &route.handler
+				return nil, matchIndex
 			}
+
 			match := false
+			matchParams := make(map[string]string)
 			for i, j := 0, len(matchRoutes); i < j; i++ {
 				if route.routeParams[i].isParam {
-					req.Params[route.routeParams[i].name] = matchRoutes[i]
+					matchParams[route.routeParams[i].name] = matchRoutes[i]
 				} else if route.routeParams[i].name != matchRoutes[i] {
 					match = false
 					break
@@ -28,12 +43,12 @@ func (g *Gor) matchRouter(w http.ResponseWriter, r *http.Request, req *Req, res 
 				match = true
 			}
 			if match {
-				return &route.handler
+				return matchParams, matchIndex
 			}
 		}
 	}
 
-	return nil
+	return nil, -1
 }
 
 // ServeHTTP use to start server
@@ -45,8 +60,15 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if handler := g.matchRouter(w, r, req, res); handler != nil {
-		(*handler)(req, res)
+	routes := splitRoute(r)
+	matchParams, matchIndex := matchRouter(r.Method, routes, g.routes)
+	if matchIndex != -1 {
+		if matchParams != nil {
+			for k, v := range matchParams {
+				req.Params[k] = v
+			}
+		}
+		g.routes[matchIndex].handler(req, res)
 		return
 	}
 
@@ -55,7 +77,7 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Use add middlewares
 func (g *Gor) Use(middlewares ...func(g *Gor) http.Handler) {
-	g.middlewares = append(g.middlewares, middlewares...)
+	//g.middlewares = append(g.middlewares, middlewares...)
 }
 
 // Listen bind port and start server

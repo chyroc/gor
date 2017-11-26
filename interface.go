@@ -21,14 +21,14 @@ type normalMethod interface {
 	Trace(pattern string, h HandlerFunc)
 }
 
-type routerInterface interface {
-	All()
-	Method()
-	Param()
-	Route()
-	Use(middlewares ...HandlerFunc)
+// RouteInterface define Route Interface
+type RouteInterface interface {
+	Use(h HandlerFunc)
+	UseN(pattern string, m Mid)
+
+	normalMethod
 }
 
 var _ gorInterface = (*Gor)(nil)
 var _ normalMethod = (*Gor)(nil)
-var _ routerInterface = (*Router)(nil)
+var _ RouteInterface = (*Route)(nil)
