@@ -12,7 +12,6 @@ type Res struct {
 	w    http.ResponseWriter
 	exit bool
 
-	failed     bool
 	Response   interface{}
 	statusCode int
 }
@@ -20,7 +19,6 @@ type Res struct {
 func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) *Res {
 	return &Res{
 		httpResponseWriter,
-		false,
 		false,
 		nil,
 		0,
@@ -30,18 +28,15 @@ func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) *Res {
 func (res *Res) Write(data []byte) (int, error) {
 	res.Response = string(data)
 	res.exit = true
+	res.w.WriteHeader(res.statusCode)
 	return res.w.Write(data)
 }
 
 // Status set Response http status code
 func (res *Res) Status(code int) *Res {
+	res.statusCode = code
 	if http.StatusText(code) == "" {
-		http.Error(res.w, ErrHTTPStatusCodeInvalid.Error(), http.StatusInternalServerError)
-		res.failed = true
-		res.exit = true
-	} else {
-		res.statusCode = code
-		res.w.WriteHeader(code)
+		res.Status(http.StatusInternalServerError).Send(ErrHTTPStatusCodeInvalid)
 	}
 
 	return res
