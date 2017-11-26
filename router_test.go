@@ -107,7 +107,7 @@ func TestRouterUse(t *testing.T) {
 		as.Len(app.routes[0].routeParams, 1)
 		as.Equal(&routeParam{name: "sub", isParam: false}, app.routes[0].routeParams[0])
 
-		e.GET("/main/sub").Expect().Status(http.StatusOK).Text().Equal("x")
+		e.GET("/main/sub?a=1&b=2&b=3").Expect().Status(http.StatusOK).Text().Equal("x")
 	}
 	{
 		app, ts, e, as := newTestServer(t)
@@ -186,5 +186,39 @@ func TestRouterUse(t *testing.T) {
 		// todo main
 		e.GET("/main").Expect().Status(http.StatusOK).Text().Equal("main")
 		e.GET("/main/sub").Expect().Status(http.StatusOK).JSON().Equal(map[string]string{"sub": "sub"})
+	}
+}
+
+func TestRouterUseWithParamsAndQuery(t *testing.T) {
+	// next 2: main router not exist
+	{
+		app, ts, e, _ := newTestServer(t)
+		defer ts.Close()
+
+		router := NewRouter()
+		router.Get("/sub", func(req *Req, res *Res) { res.JSON(map[string]interface{}{"query": req.Query, "params": req.Params}) })
+		app.UseN("/main", router)
+
+		e.GET("/main/sub?a=1&b=2&b=3").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"query": map[string][]string{"a": {"1"}, "b": {"2", "3"}}, "params": map[string]string{}})
+	}
+	{
+		app, ts, e, _ := newTestServer(t)
+		defer ts.Close()
+
+		router := NewRouter()
+		router.Get("/:sub", func(req *Req, res *Res) { res.JSON(map[string]interface{}{"query": req.Query, "params": req.Params}) })
+		app.UseN("/main", router)
+
+		e.GET("/main/sub?a=1&b=2&b=3").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"query": map[string][]string{"a": {"1"}, "b": {"2", "3"}}, "params": map[string]string{"sub":"sub"}})
+	}
+	{
+		app, ts, e, _ := newTestServer(t)
+		defer ts.Close()
+
+		router := NewRouter()
+		router.Get("/sub/:sub", func(req *Req, res *Res) { res.JSON(map[string]interface{}{"query": req.Query, "params": req.Params}) })
+		app.UseN("/main", router)
+
+		e.GET("/main/sub/sub2?a=1&b=2&b=3").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"query": map[string][]string{"a": {"1"}, "b": {"2", "3"}}, "params": map[string]string{"sub":"sub2"}})
 	}
 }

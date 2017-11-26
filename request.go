@@ -44,11 +44,18 @@ func getProtocol(r *http.Request) string {
 }
 
 func getQuery(r *http.Request) (map[string][]string, error) {
-	URL, err := url.Parse(r.URL.Path)
-	if err != nil {
-		return nil, err
+	var rowQuery string
+	if r.URL.RawQuery != "" {
+		rowQuery = r.URL.RawQuery
+	} else {
+		URL, err := url.Parse(r.URL.Path)
+		if err != nil {
+			return nil, err
+		}
+		rowQuery = URL.RawQuery
 	}
-	query, err := url.ParseQuery(URL.RawQuery)
+
+	query, err := url.ParseQuery(rowQuery)
 	if err != nil {
 		return nil, err
 	}
