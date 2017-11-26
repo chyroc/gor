@@ -46,12 +46,12 @@ func (res *Res) SendStatus(code int) {
 }
 
 // Send Send a response
-func (res *Res) Send(v string) {
+func (res *Res) Send(v interface{}) {
 	if res.exit {
 		return
 	}
 
-	res.Write([]byte(v))
+	res.Write([]byte(fmt.Sprintf("%v", v)))
 	res.exit = true
 }
 

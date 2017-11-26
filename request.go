@@ -22,6 +22,8 @@ type Req struct {
 	r       *http.Request
 	context context.Context
 
+	Protocol string
+	Secure   bool
 	Method   string
 	Query    map[string][]string
 	Hostname string
@@ -31,6 +33,14 @@ type Req struct {
 
 	Params map[string]string
 	Body   *bodyData
+}
+
+func getProtocol(r *http.Request) string {
+	if r.TLS == nil {
+		return "http"
+	}
+
+	return "https"
 }
 
 func getQuery(r *http.Request) (map[string][]string, error) {
@@ -95,10 +105,14 @@ func httpRequestToReq(r *http.Request) (*Req, error) {
 		return nil, err
 	}
 
+	protocol := getProtocol(r)
+
 	return &Req{
 		r:       r,
 		context: r.Context(),
 
+		Protocol: protocol,
+		Secure:   protocol == "https",
 		Method:   r.Method,
 		Query:    query,
 		Hostname: getHostname(r),

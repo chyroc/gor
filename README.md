@@ -8,6 +8,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/Chyroc/gor"
 )
@@ -19,6 +20,6 @@ func main() {
 		res.Send("Hello World")
 	})
 
-	fmt.Printf("err: %+v\n", app.Listen(":3000"))
+	log.Fatal(app.Listen(":3000"))
 }
 ```
