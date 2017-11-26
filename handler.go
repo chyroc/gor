@@ -7,11 +7,11 @@ import (
 
 func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
 	for k, v := range routes {
-		debugPrintf("route[%d] %+v\n", k, v)
+		debugPrintf("route[%d] %+v", k, v)
 		for k2, v2 := range v.routeParams {
-			debugPrintf("routeParams[%d] %+v\n", k2, v2)
+			debugPrintf("routeParams[%d] %+v", k2, v2)
 		}
-		debugPrintf("=====\n")
+		debugPrintf("=====")
 	}
 
 	for _, v := range paths {
