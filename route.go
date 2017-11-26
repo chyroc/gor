@@ -140,37 +140,31 @@ func (r *Route) Trace(pattern string, h HandlerFunc) {
 func (r *Route) Use(h HandlerFunc) {
 	//r.handlerRoute(http.MethodTrace, pattern, h)
 }
-func splitPattern(pattern string) []string {
-	if strings.HasPrefix(pattern, "/") {
-		pattern = pattern[1:]
-	}
-	return strings.Split(pattern, "/")
-}
 
 // UseN http trace method
 func (r *Route) UseN(pattern string, m Mid) {
 	subroutes := m.handler(pattern)
-	patternPaths := splitPattern(pattern)
-
-	matchParam, matchIndex := matchRouter("ALL", patternPaths, r.routes)
+	patternPaths := strings.Split(strings.TrimPrefix(pattern, "/"), "/")
+	_, matchIndex := matchRouter("ALL", patternPaths, r.routes)
 
 	var routeParams []*routeParam
 	if matchIndex == -1 {
 		for _, v := range patternPaths[1:] {
-			if strings.HasPrefix(v, ":") {
-				routeParams = append(routeParams, &routeParam{name: v, isParam: true})
-			} else {
-				routeParams = append(routeParams, &routeParam{name: v, isParam: false})
-			}
+			routeParams = append(routeParams, &routeParam{name: v, isParam: strings.HasPrefix(v, ":")})
 		}
 	} else {
-		fmt.Printf("matchParam %s, matchIndex %d\n", matchParam, matchIndex)
+		routeParams = append(routeParams, r.routes[matchIndex].routeParams...)
 	}
 
 	for _, v := range subroutes {
 		var subRouteParams []*routeParam
-		subRouteParams = append(routeParams, v.routeParams...)
+		if v.prepath != "" {
+			subRouteParams = append(routeParams, &routeParam{name: v.prepath, isParam: false})
+		}
+		subRouteParams = append(subRouteParams, v.routeParams...)
 		r.routes = append(r.routes, &route{
+			method:      "ALL",
+			handler:     v.handler,
 			prepath:     patternPaths[0],
 			routeParams: subRouteParams,
 		})

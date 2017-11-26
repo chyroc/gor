@@ -1,5 +1,7 @@
 package gor
 
+import "fmt"
+
 // HandlerFunc gor handler func like http.HandlerFunc func(ResponseWriter, *Request)
 type HandlerFunc func(*Req, *Res)
 
@@ -12,5 +14,13 @@ type Gor struct {
 func NewGor() *Gor {
 	return &Gor{
 		NewRoute(),
+	}
+}
+
+var debug = false
+
+func debugPrintf(format string, a ...interface{}) {
+	if debug {
+		fmt.Printf(format+"\n", a...)
 	}
 }

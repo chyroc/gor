@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/Chyroc/gor"
 )
@@ -17,5 +17,5 @@ func main() {
 		res.JSON([]string{"a", "b", "c"})
 	})
 
-	fmt.Printf("err: %+v\n", app.Listen(":3000"))
+	log.Fatal(app.Listen(":3000"))
 }

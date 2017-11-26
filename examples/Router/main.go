@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/Chyroc/gor"
+	"log"
 	"net/http"
+
+	"github.com/Chyroc/gor"
 )
 
 func Logger(g *gor.Gor) http.Handler {
@@ -18,15 +20,14 @@ func main() {
 	app := gor.NewGor()
 	router := gor.NewRouter()
 
-	router.Use(func(req *gor.Req, res gor.Res) {
-		res.Send()
+	router.Get("/sub/:uu", func(req *gor.Req, res *gor.Res) {
+		res.JSON(map[string]interface{}{
+			"query":  req.Query,
+			"params": req.Params,
+		})
 	})
 
-	app.Use(Logger)
-	app.Get("/", func(req *gor.Req, res gor.Res) {
-		res.Send("1")
-	})
-	app.Use(Logger)
+	app.UseN("/user", router)
 
-	app.Listen(":3000")
+	log.Fatal(app.Listen(":3000"))
 }

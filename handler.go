@@ -5,21 +5,26 @@ import (
 	"strings"
 )
 
-func splitRoute(r *http.Request) []string {
-	return strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
-}
-
 func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
+	for k, v := range routes {
+		debugPrintf("route[%d] %+v", k, v)
+		for k2, v2 := range v.routeParams {
+			debugPrintf("routeParams[%d] %+v", k2, v2)
+		}
+		debugPrintf("=====")
+	}
+
 	for _, v := range paths {
 		if strings.Contains(v, "/") {
 			panic("paths cannot contain /")
 		}
 	}
+
 	matchIndex := -1
 	for _, route := range routes {
 		matchIndex++
 		if route.prepath == paths[0] {
-			if method != "ALL" && route.method != method {
+			if method != "ALL" && route.method != "ALL" && route.method != method {
 				continue
 			}
 			matchRoutes := paths[1:]
@@ -60,13 +65,11 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	routes := splitRoute(r)
+	routes := strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
 	matchParams, matchIndex := matchRouter(r.Method, routes, g.routes)
 	if matchIndex != -1 {
-		if matchParams != nil {
-			for k, v := range matchParams {
-				req.Params[k] = v
-			}
+		for k, v := range matchParams {
+			req.Params[k] = v
 		}
 		g.routes[matchIndex].handler(req, res)
 		return
