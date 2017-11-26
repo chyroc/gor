@@ -16,31 +16,18 @@ func Logger(g *gor.Gor) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-//func main() {
-//	app := gor.NewGor()
-//	router := gor.NewRouter()
-//
-//	router.Get("/sub/:uu", func(req *gor.Req, res *gor.Res) {
-//		res.JSON(map[string]interface{}{
-//			"query":  req.Query,
-//			"params": req.Params,
-//		})
-//	})
-//
-//	app.UseN("/user", router)
-//
-//	log.Fatal(app.Listen(":3000"))
-//}
-
 func main() {
 	app := gor.NewGor()
+	router := gor.NewRouter()
 
-	app.Get("/user/sub/:uu", func(req *gor.Req, res *gor.Res) {
+	router.Get("/sub/:uu", func(req *gor.Req, res *gor.Res) {
 		res.JSON(map[string]interface{}{
 			"query":  req.Query,
 			"params": req.Params,
 		})
 	})
+
+	app.UseN("/user", router)
 
 	log.Fatal(app.Listen(":3000"))
 }
