@@ -1,9 +1,9 @@
 package gor
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
+	"fmt"
 )
 
 func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
@@ -66,13 +66,11 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("all mids: %+v\n", g.mids)
-	for _, mid := range g.mids {
-		if deferFunc := mid(req, res); deferFunc != nil {
-			fmt.Printf("deferFunc %v\n", deferFunc)
-			defer deferFunc(req, res)
-		}
-	}
+	//for _, mid := range g.mids {
+	//	if deferFunc := mid(req, res); deferFunc != nil {
+	//		defer deferFunc(req, res)
+	//	}
+	//}
 
 	routes := strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
 	matchParams, matchIndex := matchRouter(r.Method, routes, g.routes)
@@ -85,11 +83,6 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res.SendStatus(http.StatusNotFound)
-}
-
-// Use add middlewares
-func (g *Gor) Use(middlewares ...func(g *Gor) http.Handler) {
-	//g.middlewares = append(g.middlewares, middlewares...)
 }
 
 // Listen bind port and start server

@@ -1,38 +1,26 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/Chyroc/gor"
 )
 
-func Logger(g *gor.Gor) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("logger")
+func Logger(req *gor.Req, res *gor.Res) gor.HandlerFunc {
+	req.AddContext("time", time.Now())
+	return func(req *gor.Req, res *gor.Res) {
+		startTime := req.GetContext("time").(time.Time)
+		log.Printf("startTime %+v , endTime %+v\n", startTime.UTC(), time.Now().UTC())
 	}
-
-	return http.HandlerFunc(fn)
 }
 
 func main() {
 	app := gor.NewGor()
 	router := gor.NewRouter()
 
-	router.Use(func(req *gor.Req, res *gor.Res) gor.HandlerFunc {
-		fmt.Printf("add mid 1(should exec in real handler)\n")
-		req.AddContext("time", time.Now())
-		return func(req *gor.Req, res *gor.Res) {
-			startTime := req.GetContext("time").(time.Time)
-			fmt.Printf("startTime %+v , endTime %+v\n", startTime.UTC(), time.Now().UTC())
-			fmt.Printf("response is %+v\n", res.Response)
-		}
-	})
-
+	router.Use(Logger)
 	router.Get("/sub/:uu", func(req *gor.Req, res *gor.Res) {
-		fmt.Printf("add handler\n")
 		time.Sleep(time.Microsecond * 100)
 		res.JSON(map[string]interface{}{
 			"query":  req.Query,

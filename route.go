@@ -15,15 +15,17 @@ type routeParam struct {
 type route struct {
 	method      string
 	handler     HandlerFunc
+	midIndex    int
 	prepath     string
 	routeParams []*routeParam
 }
 
 func (r *route) copy() *route {
 	var t = &route{
-		method:  r.method,
-		handler: r.handler, // not deep copy
-		prepath: r.prepath,
+		method:   r.method,
+		handler:  r.handler, // not deep copy
+		midIndex: r.midIndex,
+		prepath:  r.prepath,
 	}
 	var rs []*routeParam
 	for _, v := range r.routeParams {
@@ -87,14 +89,10 @@ func (r *Route) handlerRoute(method string, pattern string, h HandlerFunc) {
 	r.routes = append(r.routes, &route{
 		method:      method,
 		handler:     h,
+		midIndex:    len(r.mids) - 1,
 		prepath:     prepath,
 		routeParams: rps,
 	})
-}
-
-func (r *Route) handlerMid(hd HandlerFuncDefer) {
-	fmt.Printf("add mid 4\n")
-	r.mids = append(r.mids, hd)
 }
 
 // Get http get method
@@ -143,9 +141,8 @@ func (r *Route) Trace(pattern string, h HandlerFunc) {
 }
 
 // Use http trace method
-func (r *Route) Use(h HandlerFuncDefer) {
-	fmt.Printf("add mid 2\n")
-	r.handlerMid(h)
+func (r *Route) Use(hd HandlerFuncDefer) {
+	r.mids = append(r.mids, hd)
 }
 
 // UseN http trace method
@@ -184,9 +181,4 @@ func (r *Route) handler(pattern string) *Route {
 		routes: copyRouteSlice(r.routes),
 		mids:   r.mids,
 	}
-}
-
-// Mid mid
-type Mid interface {
-	handler(pattern string) *Route
 }

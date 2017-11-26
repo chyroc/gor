@@ -5,7 +5,6 @@ import (
 )
 
 type gorInterface interface {
-	normalMethod
 	http.Handler
 }
 
@@ -21,14 +20,20 @@ type normalMethod interface {
 	Trace(pattern string, h HandlerFunc)
 }
 
+// Mid mid
+type Mid interface {
+	handler(pattern string) *Route
+}
+
 // RouteInterface define Route Interface
 type RouteInterface interface {
 	Use(h HandlerFuncDefer)
 	UseN(pattern string, m Mid)
 
 	normalMethod
+	Mid
 }
 
 var _ gorInterface = (*Gor)(nil)
-var _ normalMethod = (*Gor)(nil)
+var _ RouteInterface = (*Gor)(nil)
 var _ RouteInterface = (*Route)(nil)

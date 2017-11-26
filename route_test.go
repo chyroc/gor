@@ -43,25 +43,36 @@ func TestMethod(t *testing.T) {
 	e.Request("TRACE", "/").Expect().Status(http.StatusOK).Text().Equal("TRACE")
 }
 
-func testMid(g *Gor) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Printf("%+v\n", g.midWithPath)
-	})
-}
+func TestMid(t *testing.T) {
+	{
+		// change req
+		app, ts, e, _ := newTestServer(t)
+		defer ts.Close()
 
-func TestNext(t *testing.T) {
-	app, ts, e, _ := newTestServer(t)
-	defer ts.Close()
+		app.Use(func(req *Req, res *Res) HandlerFunc {
+			req.AddContext("test", "test-value")
+			return nil
+		})
+		app.Get("/", func(req *Req, res *Res) { res.Send(req.GetContext("test")) })
+		e.GET("/").Expect().Status(http.StatusOK).Text().Equal("test-value")
+	}
+	{
+		// get response
+		var r interface{}
+		app, ts, e, as := newTestServer(t)
+		defer ts.Close()
 
-	app.Use(testMid)
-	app.Get("/", func(req *Req, res *Res) { res.Send("11") })
-	app.Use(testMid)
-	app.Post("/2", func(req *Req, res *Res) { res.Send("22") })
-
-	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("11")
-	e.POST("/2").Expect().Status(http.StatusOK).Text().Equal("22")
-
-	// todo
-	//as.Len(app.middlewares, 2)
-	//as.Equal(map[string]int{"GET/": 0, "POST/2": 1}, app.midWithPath)
+		app.Use(func(req *Req, res *Res) HandlerFunc {
+			return func(req *Req, res *Res) {
+				r = res.Response
+			}
+		})
+		app.Get("/", func(req *Req, res *Res) { res.Send("this is response") })
+		e.GET("/").Expect().Status(http.StatusOK)
+		as.Equal("this is response", r)
+	}
+	{
+		// todo exec before response
+		// need ?
+	}
 }

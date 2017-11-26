@@ -1,6 +1,8 @@
 package gor
 
-import "fmt"
+import (
+	"log"
+)
 
 // HandlerFunc gor handler func like http.HandlerFunc func(ResponseWriter, *Request)
 type HandlerFunc func(*Req, *Res)
@@ -25,6 +27,6 @@ var debug = false
 
 func debugPrintf(format string, a ...interface{}) {
 	if debug {
-		fmt.Printf(format+"\n", a...)
+		log.Printf(format+"\n", a...)
 	}
 }
