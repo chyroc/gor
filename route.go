@@ -141,32 +141,19 @@ func (r *Route) Use(h HandlerFunc) {
 	//r.handlerRoute(http.MethodTrace, pattern, h)
 }
 func splitPattern(pattern string) []string {
-	//var rps []*routeParam
 	if strings.HasPrefix(pattern, "/") {
 		pattern = pattern[1:]
 	}
 	return strings.Split(pattern, "/")
-	//for _, v := range paths {
-	//	if strings.HasPrefix(v, ":") {
-	//		rps = append(rps, &routeParam{name: v[1:], isParam: true})
-	//	} else {
-	//		rps = append(rps, &routeParam{name: v, isParam: false})
-	//	}
-	//}
-	//return rps
 }
 
 // UseN http trace method
 func (r *Route) UseN(pattern string, m Mid) {
 	subroutes := m.handler(pattern)
-	//mainroute := r.matchMainRoute(pattern)
 	patternPaths := splitPattern(pattern)
 
 	matchParam, matchIndex := matchRouter2("ALL", patternPaths, r.routes)
-	//fmt.Printf("matchParam,matchIndex %s %s\n", matchParam, matchIndex)
-	//fmt.Printf("patternPaths %s %s\n", patternPaths, len(patternPaths))
 
-	//patternPaths : `['']`, `['a']`
 	var routeParams []*routeParam
 	if matchIndex == -1 {
 		for _, v := range patternPaths[1:] {
@@ -188,30 +175,10 @@ func (r *Route) UseN(pattern string, m Mid) {
 			routeParams: subRouteParams,
 		})
 	}
-
-	//r.handlerRoute(http.MethodTrace, pattern, h)
-	//r.routes = append(r.routes, m.Handler(pattern)...)
 }
 
 func (r *Route) handler(pattern string) []*route {
-	subroutes := copyRouteSlice(r.routes)
-
-	//for _, subroute := range routes {
-	//	fmt.Printf("subroute.prepath %s \n", subroute.prepath)
-	//	fmt.Printf("subroute.routeParams %s \n", subroute.routeParams)
-	//	fmt.Printf("pattern %s\n",pattern)
-	//	if strings.HasPrefix(pattern, "/:") {
-	//		//fmt.Printf("route.routeParams %s\n", route.routeParams)
-	//		//subroute.routeParams = append([]*routeParam{{name: pattern[2:], isParam: true}, {name: subroute.prepath, isParam: false}}, subroute.routeParams...)
-	//		subroute.routeParams = append([]*routeParam{{name: subroute.prepath, isParam: true}}, subroute.routeParams...)
-	//		//fmt.Printf("route.routeParams %s\n", route.routeParams)
-	//		subroute.prepath = ""
-	//	} else {
-	//		subroute.routeParams = append([]*routeParam{{name: subroute.prepath, isParam: false}}, subroute.routeParams...)
-	//		subroute.prepath = pattern[1:]
-	//	}
-	//}
-	return subroutes
+	return copyRouteSlice(r.routes)
 }
 
 // Mid mid
