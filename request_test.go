@@ -5,13 +5,15 @@ import (
 	"testing"
 )
 
-func TestQuery(t *testing.T) {
+func TestProtocolSecure(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
 
-	// todo path
-	app.Get("/query", func(req *Req, res *Res) { res.JSON(req.Query) })
-	e.GET("/query?a=1&c=2&c=3").Expect().Status(http.StatusOK).JSON().Equal(map[string][]string{"a": {"1"}, "c": {"2", "3"}})
+	app.Get("/1", func(req *Req, res *Res) { res.Send(req.Protocol) })
+	e.GET("/1").Expect().Status(http.StatusOK).Text().Equal("http")
+
+	app.Get("/2", func(req *Req, res *Res) { res.Send(req.Secure) })
+	e.GET("/2").Expect().Status(http.StatusOK).Text().Equal("false")
 }
 
 func TestHostname(t *testing.T) {
@@ -22,12 +24,28 @@ func TestHostname(t *testing.T) {
 	e.GET("/").Expect().Status(http.StatusOK).Text().Equal("127.0.0.1")
 }
 
-func TestBaseURL(t *testing.T) {
+func TestBaseURLOriginalURL(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
 
-	app.Get("/a", func(req *Req, res *Res) { res.Send(req.BaseURL) })
-	e.GET("/a?a=2").Expect().Status(http.StatusOK).Text().Equal("/a")
+	app.Get("/1", func(req *Req, res *Res) { res.Send(req.BaseURL) })
+	e.GET("/1").Expect().Status(http.StatusOK).Text().Equal("/1")
+	e.GET("/1?a=1").Expect().Status(http.StatusOK).Text().Equal("/1")
+
+	app.Get("/2", func(req *Req, res *Res) { res.Send(req.OriginalURL) })
+	e.GET("/2").Expect().Status(http.StatusOK).Text().Equal("/2")
+	e.GET("/2?a=1").Expect().Status(http.StatusOK).Text().Equal("/2?a=1")
+}
+
+func TestQuery(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Get("/query", func(req *Req, res *Res) { res.JSON(req.Query) })
+	e.GET("/query?a=1&c=2&c=3").Expect().Status(http.StatusOK).JSON().Equal(map[string][]string{"a": {"1"}, "c": {"2", "3"}})
+	e.GET("/query?q=a+b").Expect().Status(http.StatusOK).JSON().Equal(map[string][]string{"q": {"a b"}})
+	// todo
+	// e.GET("/query?order=desc&shoe[color]=blue&shoe[type]=converse").Expect().Status(http.StatusOK).JSON().Equal(map[string][]string{"q": {"a b"}})
 }
 
 func TestParams(t *testing.T) {
