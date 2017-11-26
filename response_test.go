@@ -74,22 +74,22 @@ func TestJSON(t *testing.T) {
 	{
 		// todo :Uintptr Func Chan Interface Ptr
 		for msg, v := range map[string]interface{}{
-			"[Response type unsupported] [int] 1\n":             1,             // int
-			"[Response type unsupported] [int8] 1\n":            int8(1),       // int8
-			"[Response type unsupported] [int16] 1\n":           int16(1),      // int16
-			"[Response type unsupported] [int32] 1\n":           int32(1),      // int32
-			"[Response type unsupported] [int64] 1\n":           int64(1),      // int64
-			"[Response type unsupported] [uint] 1\n":            uint(1),       // uint
-			"[Response type unsupported] [uint8] 1\n":           uint8(1),      // uint8
-			"[Response type unsupported] [uint16] 1\n":          uint16(1),     // uint16
-			"[Response type unsupported] [uint32] 1\n":          uint32(1),     // uint32
-			"[Response type unsupported] [uint64] 1\n":          uint64(1),     // uint64
-			"[Response type unsupported] [float32] 1.1\n":       float32(1.1),  // float32
-			"[Response type unsupported] [float64] 1.1\n":       float64(1.1),  // float64
-			"[Response type unsupported] [complex64] (1+0i)\n":  complex64(1),  // complex64
-			"[Response type unsupported] [complex128] (1+0i)\n": complex128(1), // complex128
-			"[Response type unsupported] [string] string\n":     "string",      // string
-			"[Response type unsupported] [bool] false\n":        false,         // bool
+			"[response type unsupported] [int] 1\n":             1,             // int
+			"[response type unsupported] [int8] 1\n":            int8(1),       // int8
+			"[response type unsupported] [int16] 1\n":           int16(1),      // int16
+			"[response type unsupported] [int32] 1\n":           int32(1),      // int32
+			"[response type unsupported] [int64] 1\n":           int64(1),      // int64
+			"[response type unsupported] [uint] 1\n":            uint(1),       // uint
+			"[response type unsupported] [uint8] 1\n":           uint8(1),      // uint8
+			"[response type unsupported] [uint16] 1\n":          uint16(1),     // uint16
+			"[response type unsupported] [uint32] 1\n":          uint32(1),     // uint32
+			"[response type unsupported] [uint64] 1\n":          uint64(1),     // uint64
+			"[response type unsupported] [float32] 1.1\n":       float32(1.1),  // float32
+			"[response type unsupported] [float64] 1.1\n":       float64(1.1),  // float64
+			"[response type unsupported] [complex64] (1+0i)\n":  complex64(1),  // complex64
+			"[response type unsupported] [complex128] (1+0i)\n": complex128(1), // complex128
+			"[response type unsupported] [string] string\n":     "string",      // string
+			"[response type unsupported] [bool] false\n":        false,         // bool
 		} {
 			app, ts, e, _ := newTestServer(t)
 			defer ts.Close()

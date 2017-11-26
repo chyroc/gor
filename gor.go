@@ -9,10 +9,6 @@ type HandlerFunc func(*Req, *Res)
 // but return HandlerFunc to do somrthing at defer time
 type HandlerFuncDefer func(*Req, *Res) HandlerFunc
 
-//func GenDeferFunc() *HandlerFunc{
-//return &
-//}
-
 // Gor gor framework core struct
 type Gor struct {
 	*Route

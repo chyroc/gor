@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/Chyroc/gor"
-	"time"
 )
 
 func Logger(g *gor.Gor) http.Handler {
@@ -39,8 +39,6 @@ func main() {
 			"params": req.Params,
 		})
 	})
-
-	app.UseN("/user", router)
 
 	app.UseN("/user", router)
 
