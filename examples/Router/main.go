@@ -27,7 +27,7 @@ func main() {
 		return func(req *gor.Req, res *gor.Res) {
 			startTime := req.GetContext("time").(time.Time)
 			fmt.Printf("startTime %+v , endTime %+v\n", startTime.UTC(), time.Now().UTC())
-			fmt.Printf("response is %+v\n",res.Response)
+			fmt.Printf("response is %+v\n", res.Response)
 		}
 	})
 
@@ -39,6 +39,8 @@ func main() {
 			"params": req.Params,
 		})
 	})
+
+	app.UseN("/user", router)
 
 	app.UseN("/user", router)
 

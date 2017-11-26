@@ -4,6 +4,9 @@ import "fmt"
 
 // HandlerFunc gor handler func like http.HandlerFunc func(ResponseWriter, *Request)
 type HandlerFunc func(*Req, *Res)
+
+// HandlerFuncDefer gor handler func like http.HandlerFunc func(ResponseWriter, *Request),
+// but return HandlerFunc to do somrthing at defer time
 type HandlerFuncDefer func(*Req, *Res) HandlerFunc
 
 //func GenDeferFunc() *HandlerFunc{
