@@ -3,6 +3,7 @@ package gor
 import (
 	"net/http"
 	"strings"
+	"fmt"
 )
 
 func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
@@ -63,6 +64,14 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		res.Error(err.Error())
 		return
+	}
+
+	fmt.Printf("all mids: %+v\n",g.mids)
+	for _, mid := range g.mids {
+		if deferFunc := mid(req, res); deferFunc != nil {
+			fmt.Printf("deferFunc %v\n", deferFunc)
+			defer deferFunc(req, res)
+		}
 	}
 
 	routes := strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")

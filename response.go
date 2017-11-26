@@ -11,12 +11,19 @@ import (
 type Res struct {
 	http.ResponseWriter
 	exit bool
+
+	failed     bool
+	Response   interface{}
+	statusCode int
 }
 
 func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) *Res {
 	return &Res{
 		httpResponseWriter,
 		false,
+		false,
+		nil,
+		0,
 	}
 }
 
@@ -24,19 +31,21 @@ func (res *Res) errResponseTypeUnsupported(vtype string, v interface{}) {
 	http.Error(res, fmt.Sprintf("[%s] [%s] %+v", ErrResponseTypeUnsupported, vtype, v), http.StatusInternalServerError)
 }
 
-// Status set response http status code
+// Status set Response http status code
 func (res *Res) Status(code int) *Res {
 	if http.StatusText(code) == "" {
 		http.Error(res, ErrHTTPStatusCodeInvalid.Error(), http.StatusInternalServerError)
+		res.failed = true
 		res.exit = true
 	} else {
+		res.statusCode = code
 		res.WriteHeader(code)
 	}
 
 	return res
 }
 
-// SendStatus set response http status code with its text
+// SendStatus set Response http status code with its text
 func (res *Res) SendStatus(code int) {
 	if res.exit {
 		return
@@ -45,17 +54,19 @@ func (res *Res) SendStatus(code int) {
 	res.Status(code).Send(http.StatusText(code))
 }
 
-// Send Send a response
+// Send Send a Response
 func (res *Res) Send(v interface{}) {
 	if res.exit {
 		return
 	}
 
+	res.Response = fmt.Sprintf("%v", v)
+
 	res.Write([]byte(fmt.Sprintf("%v", v)))
 	res.exit = true
 }
 
-// JSON Send json response
+// JSON Send json Response
 func (res *Res) JSON(v interface{}) {
 	defer func() {
 		res.exit = true
@@ -67,6 +78,7 @@ func (res *Res) JSON(v interface{}) {
 
 	if v == nil {
 		res.Header().Set("Content-Type", "application/json")
+		res.Response = "null"
 		res.Write([]byte("null"))
 		return
 	}
@@ -77,6 +89,8 @@ func (res *Res) JSON(v interface{}) {
 		break
 	default:
 		res.errResponseTypeUnsupported(t.Kind().String(), v)
+		res.Response = "x"
+		res.failed = true
 		return
 	}
 
@@ -84,10 +98,12 @@ func (res *Res) JSON(v interface{}) {
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(res, ErrJSONMarshal.Error())
+		res.Response = ErrJSONMarshal.Error()
 		return
 	}
 
 	res.Header().Set("Content-Type", "application/json")
+	res.Response = string(b)
 	res.Write(b)
 }
 
@@ -95,6 +111,7 @@ func (res *Res) JSON(v interface{}) {
 func (res *Res) Redirect(path string) {
 	res.Header().Set("Location", path)
 	res.WriteHeader(http.StatusFound)
+	res.Response = fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)
 	res.Write([]byte(fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)))
 }
 
@@ -120,8 +137,10 @@ func (res *Res) SetCookie(key, val string, option ...Cookie) {
 	http.SetCookie(res, cookie)
 }
 
-// Error send erroe response
+// Error send erroe Response
 func (res *Res) Error(v string) {
+	res.failed = true
+	res.Response = v
 	http.Error(res, v, http.StatusInternalServerError)
 	res.exit = true
 }

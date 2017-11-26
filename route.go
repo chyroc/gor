@@ -47,6 +47,7 @@ func copyRouteSlice(routes []*route) []*route {
 // Route route
 type Route struct {
 	routes []*route
+	mids   []HandlerFuncDefer
 }
 
 // NewRoute return *Router
@@ -89,6 +90,11 @@ func (r *Route) handlerRoute(method string, pattern string, h HandlerFunc) {
 		prepath:     prepath,
 		routeParams: rps,
 	})
+}
+
+func (r *Route) handlerMid(hd HandlerFuncDefer) {
+	fmt.Printf("add mid 4\n")
+	r.mids = append(r.mids, hd)
 }
 
 // Get http get method
@@ -137,13 +143,14 @@ func (r *Route) Trace(pattern string, h HandlerFunc) {
 }
 
 // Use http trace method
-func (r *Route) Use(h HandlerFunc) {
-	//r.handlerRoute(http.MethodTrace, pattern, h)
+func (r *Route) Use(h HandlerFuncDefer) {
+	fmt.Printf("add mid 2\n")
+	r.handlerMid(h)
 }
 
 // UseN http trace method
 func (r *Route) UseN(pattern string, m Mid) {
-	subroutes := m.handler(pattern)
+	midRouter := m.handler(pattern)
 	patternPaths := strings.Split(strings.TrimPrefix(pattern, "/"), "/")
 	_, matchIndex := matchRouter("ALL", patternPaths, r.routes)
 
@@ -156,7 +163,7 @@ func (r *Route) UseN(pattern string, m Mid) {
 		routeParams = append(routeParams, r.routes[matchIndex].routeParams...)
 	}
 
-	for _, v := range subroutes {
+	for _, v := range midRouter.routes {
 		var subRouteParams []*routeParam
 		if v.prepath != "" {
 			subRouteParams = append(routeParams, &routeParam{name: v.prepath, isParam: false})
@@ -169,13 +176,17 @@ func (r *Route) UseN(pattern string, m Mid) {
 			routeParams: subRouteParams,
 		})
 	}
+	r.mids = append(r.mids, midRouter.mids...)
 }
 
-func (r *Route) handler(pattern string) []*route {
-	return copyRouteSlice(r.routes)
+func (r *Route) handler(pattern string) *Route {
+	return &Route{
+		routes: copyRouteSlice(r.routes),
+		mids:   r.mids,
+	}
 }
 
 // Mid mid
 type Mid interface {
-	handler(pattern string) []*route
+	handler(pattern string) *Route
 }

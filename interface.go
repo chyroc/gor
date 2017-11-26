@@ -23,7 +23,7 @@ type normalMethod interface {
 
 // RouteInterface define Route Interface
 type RouteInterface interface {
-	Use(h HandlerFunc)
+	Use(h HandlerFuncDefer)
 	UseN(pattern string, m Mid)
 
 	normalMethod
