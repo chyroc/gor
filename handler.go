@@ -5,10 +5,6 @@ import (
 	"strings"
 )
 
-func splitRoute(r *http.Request) []string {
-	return strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
-}
-
 func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
 	for _, v := range paths {
 		if strings.Contains(v, "/") {
@@ -60,13 +56,11 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	routes := splitRoute(r)
+	routes := strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
 	matchParams, matchIndex := matchRouter(r.Method, routes, g.routes)
 	if matchIndex != -1 {
-		if matchParams != nil {
-			for k, v := range matchParams {
-				req.Params[k] = v
-			}
+		for k, v := range matchParams {
+			req.Params[k] = v
 		}
 		g.routes[matchIndex].handler(req, res)
 		return

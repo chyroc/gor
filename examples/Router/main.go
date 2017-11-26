@@ -18,15 +18,11 @@ func main() {
 	app := gor.NewGor()
 	router := gor.NewRouter()
 
-	router.Use(func(req *gor.Req, res gor.Res) {
-		res.Send()
+	router.Get("/sub", func(req *gor.Req, res *gor.Res) {
+		res.JSON(req.Params)
 	})
 
-	app.Use(Logger)
-	app.Get("/", func(req *gor.Req, res gor.Res) {
-		res.Send("1")
-	})
-	app.Use(Logger)
+	app.UseN("/user", router)
 
 	app.Listen(":3000")
 }
