@@ -9,7 +9,7 @@ func splitRoute(r *http.Request) []string {
 	return strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
 }
 
-func matchRouter2(method string, paths []string, routes []*route) (map[string]string, int) {
+func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
 	for _, v := range paths {
 		if strings.Contains(v, "/") {
 			panic("paths cannot contain /")
@@ -51,21 +51,6 @@ func matchRouter2(method string, paths []string, routes []*route) (map[string]st
 	return nil, -1
 }
 
-func (g *Gor) matchRouter(w http.ResponseWriter, r *http.Request, req *Req, res *Res) *HandlerFunc {
-	routes := splitRoute(r)
-	matchParams, matchIndex := matchRouter2(r.Method, routes, g.routes)
-	if matchIndex != -1 {
-		if matchParams != nil {
-			for k, v := range matchParams {
-				req.Params[k] = v
-			}
-		}
-		return &g.routes[matchIndex].handler
-	}
-
-	return nil
-}
-
 // ServeHTTP use to start server
 func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	res := httpResponseWriterToRes(w)
@@ -75,8 +60,15 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if handler := g.matchRouter(w, r, req, res); handler != nil {
-		(*handler)(req, res)
+	routes := splitRoute(r)
+	matchParams, matchIndex := matchRouter(r.Method, routes, g.routes)
+	if matchIndex != -1 {
+		if matchParams != nil {
+			for k, v := range matchParams {
+				req.Params[k] = v
+			}
+		}
+		g.routes[matchIndex].handler(req, res)
 		return
 	}
 

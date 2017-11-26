@@ -152,7 +152,7 @@ func (r *Route) UseN(pattern string, m Mid) {
 	subroutes := m.handler(pattern)
 	patternPaths := splitPattern(pattern)
 
-	matchParam, matchIndex := matchRouter2("ALL", patternPaths, r.routes)
+	matchParam, matchIndex := matchRouter("ALL", patternPaths, r.routes)
 
 	var routeParams []*routeParam
 	if matchIndex == -1 {
