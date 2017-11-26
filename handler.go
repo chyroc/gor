@@ -3,20 +3,51 @@ package gor
 import (
 	"net/http"
 	"strings"
+	"fmt"
 )
 
+// splitRoute split url to path array
+// / -> [""]
+// /a -> [a]
+func splitRoute(r *http.Request) []string {
+	return strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
+	//path := strings.Split(r.URL.Path, "?")[0]
+	//if path == "/" {
+	//	return []string{"/"}
+	//}
+	//paths := strings.Split(path, "/")
+	//paths[0] = "/"
+	//return paths
+}
+
 func (g *Gor) matchRouter(w http.ResponseWriter, r *http.Request, req *Req, res *Res) *HandlerFunc {
-	routes := strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
+	fmt.Printf("routes %s\n", g.routes)
+	fmt.Printf("routeParams %s\n", g.routes[0].routeParams)
+	fmt.Printf("prepath %s\n", g.routes[0].prepath)
+
+	routes := splitRoute(r)
+	fmt.Printf("routes %+v %s\n", routes, len(routes))
 
 	for _, route := range g.routes {
-		if route.method == r.Method && route.prepath == routes[0] {
-			matchRoutes := routes[1:]
+		fmt.Printf("==1\n")
+		fmt.Printf("", route.method, r.Method, route.prepath, routes[0])
+		if route.method == r.Method && (route.prepath == "" || route.prepath == routes[0]) {
+			fmt.Printf("==2\n")
+			matchRoutes := []string{}
+			if route.prepath == "" {
+				matchRoutes = routes
+			} else {
+				matchRoutes = routes[1:]
+			}
+			//fmt.Printf("", matchRoutes, route.routeParams[0], route.routeParams[1])
 			if len(matchRoutes) != len(route.routeParams) {
 				continue
 			}
+			fmt.Printf("==3\n")
 			if len(route.routeParams) == 0 && len(matchRoutes) == 0 {
 				return &route.handler
 			}
+			fmt.Printf("==4\n")
 			match := false
 			for i, j := 0, len(matchRoutes); i < j; i++ {
 				if route.routeParams[i].isParam {
@@ -55,7 +86,7 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Use add middlewares
 func (g *Gor) Use(middlewares ...func(g *Gor) http.Handler) {
-	g.middlewares = append(g.middlewares, middlewares...)
+	//g.middlewares = append(g.middlewares, middlewares...)
 }
 
 // Listen bind port and start server

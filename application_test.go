@@ -1,7 +1,6 @@
 package gor
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -46,7 +45,7 @@ func TestMethod(t *testing.T) {
 
 func testMid(g *Gor) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%+v\n", g.midWithPath)
+		//fmt.Printf("%+v\n", g.midWithPath)
 	})
 }
 

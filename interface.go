@@ -29,6 +29,13 @@ type routerInterface interface {
 	Use(middlewares ...HandlerFunc)
 }
 
+type RouteInterface interface {
+	Use(h HandlerFunc)
+	UseN(pattern string, m Mid)
+
+	normalMethod
+}
+
 var _ gorInterface = (*Gor)(nil)
 var _ normalMethod = (*Gor)(nil)
-var _ routerInterface = (*Router)(nil)
+var _ RouteInterface = (*Route)(nil)
