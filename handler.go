@@ -3,7 +3,6 @@ package gor
 import (
 	"net/http"
 	"strings"
-	"fmt"
 )
 
 // splitRoute split url to path array
@@ -21,29 +20,34 @@ func splitRoute(r *http.Request) []string {
 }
 
 func matchRouter2(method string, paths []string, routes []*route) (map[string]string, int) {
-	for _,v:=range paths{
-		if strings.Contains(v,"/"){
+	for _, v := range paths {
+		if strings.Contains(v, "/") {
 			panic("paths cannot contain /")
 		}
 	}
 	matchIndex := -1
 	for _, route := range routes {
 		matchIndex++
+		//fmt.Printf("route.prepath %s == paths[0] %s %s\n", route.prepath, paths[0], route.prepath == paths[0])
 		if route.prepath == paths[0] {
 			if method != "ALL" && route.method != method {
 				continue
 			}
+			//fmt.Printf("11\n")
 
-			matchRoutes := []string{}
-			if route.prepath == "" {
-				matchRoutes = paths
-			} else {
-				matchRoutes = paths[1:]
-			}
-			//fmt.Printf("", matchRoutes, route.routeParams[0], route.routeParams[1])
+			matchRoutes := paths[1:]
+			//matchRoutes := []string{}
+			//if route.prepath == "" {
+			//	matchRoutes = paths[1:]
+			//} else {
+			//	matchRoutes = paths[1:]
+			//}
+			//fmt.Printf(" %s %s %s %s %s\n",route.prepath, matchRoutes, route.routeParams, len(matchRoutes), len(route.routeParams))
 			if len(matchRoutes) != len(route.routeParams) {
 				continue
 			}
+			//fmt.Printf("22\n")
+
 			if len(route.routeParams) == 0 && len(matchRoutes) == 0 {
 				return nil, matchIndex
 			}
@@ -69,17 +73,21 @@ func matchRouter2(method string, paths []string, routes []*route) (map[string]st
 }
 
 func (g *Gor) matchRouter(w http.ResponseWriter, r *http.Request, req *Req, res *Res) *HandlerFunc {
-	fmt.Printf("routes %s\n", g.routes)
-	fmt.Printf("routeParams %s\n", g.routes[0].routeParams)
-	fmt.Printf("prepath %s\n", g.routes[0].prepath)
+	//fmt.Printf("routes %s\n", g.routes)
+	//fmt.Printf("routeParams %s\n", g.routes[0].routeParams)
+	//fmt.Printf("prepath %s\n", g.routes[0].prepath)
 
 	routes := splitRoute(r)
-	fmt.Printf("routes %+v %s\n", routes, len(routes))
+	//fmt.Printf("routes %+v %s\n", routes, len(routes))
 
+	//fmt.Printf("r.Method %s, routes %s %s, g.routes %s\n", r.Method, routes, len(routes), g.routes)
 	matchParams, matchIndex := matchRouter2(r.Method, routes, g.routes)
-	if matchIndex != -1 && matchParams != nil {
-		for k, v := range matchParams {
-			req.Params[k] = v
+	//fmt.Printf("matchParams %s, matchIndex %s\n", matchParams, matchIndex)
+	if matchIndex != -1 {
+		if matchParams != nil {
+			for k, v := range matchParams {
+				req.Params[k] = v
+			}
 		}
 		return &g.routes[matchIndex].handler
 	}

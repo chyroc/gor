@@ -49,7 +49,7 @@ type Route struct {
 	routes []*route
 }
 
-// NewRouter return *Router
+// NewRoute return *Router
 func NewRoute() *Route {
 	return &Route{}
 }
@@ -158,13 +158,13 @@ func splitPattern(pattern string) []string {
 
 // UseN http trace method
 func (r *Route) UseN(pattern string, m Mid) {
-	subroutes := m.Handler(pattern)
+	subroutes := m.handler(pattern)
 	//mainroute := r.matchMainRoute(pattern)
 	patternPaths := splitPattern(pattern)
 
 	matchParam, matchIndex := matchRouter2("ALL", patternPaths, r.routes)
-	fmt.Printf("matchParam,matchIndex %s %s\n", matchParam, matchIndex)
-	fmt.Printf("patternPaths %s %s\n", patternPaths, len(patternPaths))
+	//fmt.Printf("matchParam,matchIndex %s %s\n", matchParam, matchIndex)
+	//fmt.Printf("patternPaths %s %s\n", patternPaths, len(patternPaths))
 
 	//patternPaths : `['']`, `['a']`
 	var routeParams []*routeParam
@@ -176,6 +176,8 @@ func (r *Route) UseN(pattern string, m Mid) {
 				routeParams = append(routeParams, &routeParam{name: v, isParam: false})
 			}
 		}
+	} else {
+		fmt.Printf("matchParam %s, matchIndex %d\n", matchParam, matchIndex)
 	}
 
 	for _, v := range subroutes {
@@ -191,8 +193,7 @@ func (r *Route) UseN(pattern string, m Mid) {
 	//r.routes = append(r.routes, m.Handler(pattern)...)
 }
 
-// Handler http trace method
-func (r *Route) Handler(pattern string) []*route {
+func (r *Route) handler(pattern string) []*route {
 	subroutes := copyRouteSlice(r.routes)
 
 	//for _, subroute := range routes {
@@ -213,6 +214,7 @@ func (r *Route) Handler(pattern string) []*route {
 	return subroutes
 }
 
+// Mid mid
 type Mid interface {
-	Handler(pattern string) []*route
+	handler(pattern string) []*route
 }
