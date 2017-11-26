@@ -20,6 +20,54 @@ func splitRoute(r *http.Request) []string {
 	//return paths
 }
 
+func matchRouter2(method string, paths []string, routes []*route) (map[string]string, int) {
+	for _,v:=range paths{
+		if strings.Contains(v,"/"){
+			panic("paths cannot contain /")
+		}
+	}
+	matchIndex := -1
+	for _, route := range routes {
+		matchIndex++
+		if route.prepath == paths[0] {
+			if method != "ALL" && route.method != method {
+				continue
+			}
+
+			matchRoutes := []string{}
+			if route.prepath == "" {
+				matchRoutes = paths
+			} else {
+				matchRoutes = paths[1:]
+			}
+			//fmt.Printf("", matchRoutes, route.routeParams[0], route.routeParams[1])
+			if len(matchRoutes) != len(route.routeParams) {
+				continue
+			}
+			if len(route.routeParams) == 0 && len(matchRoutes) == 0 {
+				return nil, matchIndex
+			}
+
+			match := false
+			matchParams := make(map[string]string)
+			for i, j := 0, len(matchRoutes); i < j; i++ {
+				if route.routeParams[i].isParam {
+					matchParams[route.routeParams[i].name] = matchRoutes[i]
+				} else if route.routeParams[i].name != matchRoutes[i] {
+					match = false
+					break
+				}
+				match = true
+			}
+			if match {
+				return matchParams, matchIndex
+			}
+		}
+	}
+
+	return nil, -1
+}
+
 func (g *Gor) matchRouter(w http.ResponseWriter, r *http.Request, req *Req, res *Res) *HandlerFunc {
 	fmt.Printf("routes %s\n", g.routes)
 	fmt.Printf("routeParams %s\n", g.routes[0].routeParams)
@@ -28,40 +76,12 @@ func (g *Gor) matchRouter(w http.ResponseWriter, r *http.Request, req *Req, res 
 	routes := splitRoute(r)
 	fmt.Printf("routes %+v %s\n", routes, len(routes))
 
-	for _, route := range g.routes {
-		fmt.Printf("==1\n")
-		fmt.Printf("", route.method, r.Method, route.prepath, routes[0])
-		if route.method == r.Method && (route.prepath == "" || route.prepath == routes[0]) {
-			fmt.Printf("==2\n")
-			matchRoutes := []string{}
-			if route.prepath == "" {
-				matchRoutes = routes
-			} else {
-				matchRoutes = routes[1:]
-			}
-			//fmt.Printf("", matchRoutes, route.routeParams[0], route.routeParams[1])
-			if len(matchRoutes) != len(route.routeParams) {
-				continue
-			}
-			fmt.Printf("==3\n")
-			if len(route.routeParams) == 0 && len(matchRoutes) == 0 {
-				return &route.handler
-			}
-			fmt.Printf("==4\n")
-			match := false
-			for i, j := 0, len(matchRoutes); i < j; i++ {
-				if route.routeParams[i].isParam {
-					req.Params[route.routeParams[i].name] = matchRoutes[i]
-				} else if route.routeParams[i].name != matchRoutes[i] {
-					match = false
-					break
-				}
-				match = true
-			}
-			if match {
-				return &route.handler
-			}
+	matchParams, matchIndex := matchRouter2(r.Method, routes, g.routes)
+	if matchIndex != -1 && matchParams != nil {
+		for k, v := range matchParams {
+			req.Params[k] = v
 		}
+		return &g.routes[matchIndex].handler
 	}
 
 	return nil

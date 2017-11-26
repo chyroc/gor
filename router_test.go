@@ -86,16 +86,16 @@ func TestRouterParams(t *testing.T) {
 		app, ts, _, as := newTestServer(t)
 		defer ts.Close()
 
-		// 1 `/main/:sub` router with app+router
-
+		// `/main/:sub` router with app+router
 		router := NewRouter()
 		router.Get("/:sub", func(req *Req, res *Res) { res.End() })
 		app.UseN("/main", router)
 
 		// router
 		as.Len(router.routes, 1)
-		as.Equal("sub", router.routes[0].prepath)
-		as.Len(router.routes[0].routeParams, 0)
+		as.Equal("", router.routes[0].prepath)
+		as.Len(router.routes[0].routeParams, 1)
+		as.Equal(&routeParam{name: "sub", isParam: true}, router.routes[0].routeParams[0])
 
 		// app
 		as.Len(app.routes, 1)
