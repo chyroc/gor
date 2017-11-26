@@ -22,7 +22,7 @@ func TestStatus(t *testing.T) {
 		defer ts.Close()
 
 		app.Get("/", func(req *Req, res *Res) { res.Status(-1).Send("Hello World") })
-		e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\n")
+		e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid")
 	}
 }
 
@@ -39,7 +39,7 @@ func TestSendStatus(t *testing.T) {
 		defer ts.Close()
 
 		app.Get("/", func(req *Req, res *Res) { res.SendStatus(-1) })
-		e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid\n")
+		e.GET("/").Expect().Status(http.StatusInternalServerError).Text().Equal("http status code is invalid")
 	}
 }
 

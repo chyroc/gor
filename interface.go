@@ -8,6 +8,24 @@ type gorInterface interface {
 	http.Handler
 }
 
+type resInterface interface {
+	Write(data []byte) (int, error)
+	Status(code int) *Res
+	SendStatus(code int)
+	Send(v interface{})
+	JSON(v interface{})
+	Redirect(path string)
+	AddHeader(key, val string)
+	SetCookie(key, val string, option ...Cookie)
+	Error(v string)
+	End()
+}
+
+type reqInterface interface {
+	AddContext(key, val interface{})
+	GetContext(key interface{}) interface{}
+}
+
 type normalMethod interface {
 	Get(pattern string, h HandlerFunc)
 	Head(pattern string, h HandlerFunc)
@@ -35,5 +53,7 @@ type RouteInterface interface {
 }
 
 var _ gorInterface = (*Gor)(nil)
+var _ resInterface = (*Res)(nil)
+var _ reqInterface = (*Req)(nil)
 var _ RouteInterface = (*Gor)(nil)
 var _ RouteInterface = (*Route)(nil)

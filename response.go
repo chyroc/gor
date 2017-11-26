@@ -21,13 +21,13 @@ func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) *Res {
 		httpResponseWriter,
 		false,
 		nil,
-		0,
+		200,
 	}
 }
 
 func (res *Res) Write(data []byte) (int, error) {
-	res.Response = string(data)
 	res.exit = true
+	res.Response = string(data)
 	res.w.WriteHeader(res.statusCode)
 	return res.w.Write(data)
 }
