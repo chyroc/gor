@@ -38,18 +38,18 @@ type normalMethod interface {
 	Trace(pattern string, h HandlerFunc)
 }
 
-// Mid mid
-type Mid interface {
-	handler(pattern string) *Route
+// Middleware mid
+type Middleware interface {
+	handler(pattern string) []*route
 }
 
 // RouteInterface define Route Interface
 type RouteInterface interface {
-	Use(h HandlerFuncDefer)
-	UseN(pattern string, m Mid)
+	Use(...interface {})
+	//UseN(pattern string, m Middleware)
 
 	normalMethod
-	Mid
+	Middleware
 }
 
 var _ gorInterface = (*Gor)(nil)

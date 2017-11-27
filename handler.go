@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
+func matchRouter(method string, paths []string, routes []*route) []*matchedRoute {
+	debugPrintf("routes len %s", len(routes))
 	for k, v := range routes {
 		debugPrintf("route[%d] %+v", k, v)
 		for k2, v2 := range v.routeParams {
@@ -20,11 +21,10 @@ func matchRouter(method string, paths []string, routes []*route) (map[string]str
 		}
 	}
 
-	matchIndex := -1
-	for _, route := range routes {
-		matchIndex++
+	var matchedRoutes []*matchedRoute
+	for matchIndex, route := range routes {
 		if route.prepath == paths[0] {
-			if method != "ALL" && route.method != "ALL" && route.method != method {
+			if route.method != "ALL" && route.method != method {
 				continue
 			}
 			matchRoutes := paths[1:]
@@ -33,7 +33,8 @@ func matchRouter(method string, paths []string, routes []*route) (map[string]str
 			}
 
 			if len(route.routeParams) == 0 && len(matchRoutes) == 0 {
-				return nil, matchIndex
+				matchedRoutes = append(matchedRoutes, &matchedRoute{index: matchIndex})
+				continue
 			}
 
 			match := false
@@ -48,12 +49,13 @@ func matchRouter(method string, paths []string, routes []*route) (map[string]str
 				match = true
 			}
 			if match {
-				return matchParams, matchIndex
+				matchedRoutes = append(matchedRoutes, &matchedRoute{index: matchIndex, params: matchParams})
+				continue
 			}
 		}
 	}
 
-	return nil, -1
+	return matchedRoutes
 }
 
 // ServeHTTP use to start server
@@ -65,20 +67,43 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, mid := range g.mids {
-		if deferFunc := mid(req, res); deferFunc != nil {
-			defer deferFunc(req, res)
-		}
-	}
-
 	routes := strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
-	matchParams, matchIndex := matchRouter(r.Method, routes, g.routes)
-	if matchIndex != -1 {
+	matchedRoutes := matchRouter(r.Method, routes, g.routes)
+	debugPrintf("matchedRoutes len %d", len(matchedRoutes))
+	canNext := true
+	isFirst := true
+	for i, matchedRoute_ := range matchedRoutes {
+		canNext = false
+		debugPrintf("res exit %s", res.exit)
+		if res.exit {
+			return
+		}
+		if !isFirst || canNext {
+			return
+		}
+		debugPrintf("matchedRoute[%d] %+v", i, matchedRoute_)
+		route := g.routes[matchedRoute_.index]
+		matchParams := matchedRoute_.params
+		debugPrintf("route %+v \nmatchParams %+v", route, matchParams)
 		for k, v := range matchParams {
 			req.Params[k] = v
 		}
-		g.routes[matchIndex].handler(req, res)
-		return
+		if route.handlerFunc != nil {
+			route.handlerFunc(req, res)
+			return
+			//continue
+		} else if route.handlerFuncNext != nil {
+			isFirst = false
+			route.handlerFuncNext(req, res, func() {
+				canNext = true
+			})
+			continue
+		} else if route.middleware != nil {
+			route.middleware.handler("")
+			continue
+		}
+
+		panic("")
 	}
 
 	res.SendStatus(http.StatusNotFound)

@@ -43,36 +43,135 @@ func TestMethod(t *testing.T) {
 	e.Request("TRACE", "/").Expect().Status(http.StatusOK).Text().Equal("TRACE")
 }
 
-func TestMid(t *testing.T) {
+func TestUse(t *testing.T) {
 	{
-		// change req
-		app, ts, e, _ := newTestServer(t)
+		// only app use
+		app, ts, _, as := newTestServer(t)
 		defer ts.Close()
 
-		app.Use(func(req *Req, res *Res) HandlerFunc {
-			req.AddContext("test", "test-value")
-			return nil
-		})
-		app.Get("/", func(req *Req, res *Res) { res.Send(req.GetContext("test")) })
-		e.GET("/").Expect().Status(http.StatusOK).Text().Equal("test-value")
-	}
-	{
-		// get response
-		var r interface{}
-		app, ts, e, as := newTestServer(t)
-		defer ts.Close()
+		func1 := func(req *Req, res *Res) {}
+		app.Use("/1", func1)
+		as.Len(app.routes, 1)
+		as.Equal("ALL", app.routes[0].method)
+		as.Equal("1", app.routes[0].prepath)
+		//as.Equal("/1", app.routes[0].parentIndex)
+		as.Len(app.routes[0].routeParams, 0)
+		as.Nil(app.routes[0].handlerFuncNext)
+		as.Nil(app.routes[0].middleware)
 
-		app.Use(func(req *Req, res *Res) HandlerFunc {
-			return func(req *Req, res *Res) {
-				r = res.Response
-			}
-		})
-		app.Get("/", func(req *Req, res *Res) { res.Send("this is response") })
-		e.GET("/").Expect().Status(http.StatusOK)
-		as.Equal("this is response", r)
+		app.Use("/2", func(req *Req, res *Res, next Next) {})
+		as.Len(app.routes, 2)
+		as.Equal("ALL", app.routes[1].method)
+		as.Equal("2", app.routes[1].prepath)
+		//as.Equal("/2", app.routes[1].parentIndex)
+		as.Len(app.routes[1].routeParams, 0)
+		as.Nil(app.routes[1].handlerFunc)
+		as.Nil(app.routes[1].middleware)
 	}
 	{
-		// todo exec before response
-		// need ?
+		// app use and router
+		app, ts, _, as := newTestServer(t)
+		defer ts.Close()
+		router := NewRouter()
+		app.Get("/no-sub", func(req *Req, res *Res) {})
+		router.Get("/1", func(req *Req, res *Res) {})
+		router.Get("/2", func(req *Req, res *Res) {})
+		app.Use("/main", router)
+
+		as.Len(app.routes, 3)
+		as.Equal("GET", app.routes[0].method)
+		as.Equal("no-sub", app.routes[0].prepath)
+		//as.Equal("/no-sub", app.routes[0].parentIndex)
+		as.Len(app.routes[0].routeParams, 0)
+		as.Nil(app.routes[0].handlerFuncNext)
+		as.Nil(app.routes[0].middleware)
+
+		as.Equal("GET", app.routes[1].method)
+		as.Equal("main", app.routes[1].prepath)
+		//as.Equal("/main/1", app.routes[1].parentIndex)
+		as.Len(app.routes[1].routeParams, 1)
+		as.Equal(&routeParam{name: "1", isParam: false}, app.routes[1].routeParams[0])
+		as.Nil(app.routes[1].handlerFuncNext)
+		as.Nil(app.routes[1].middleware)
+
+		as.Equal("GET", app.routes[2].method)
+		as.Equal("main", app.routes[2].prepath)
+		//as.Equal("/main/2", app.routes[2].parentIndex)
+		as.Len(app.routes[2].routeParams, 1)
+		as.Equal(&routeParam{name: "2", isParam: false}, app.routes[2].routeParams[0])
+		as.Nil(app.routes[2].handlerFuncNext)
+		as.Nil(app.routes[2].middleware)
+	}
+	{
+		// app use and router + params
+		app, ts, _, as := newTestServer(t)
+		defer ts.Close()
+		router := NewRouter()
+		app.Get("/no-sub/:name0", func(req *Req, res *Res) {})
+		router.Get("/1/:name1", func(req *Req, res *Res) {})
+		router.Get("/2/:name2", func(req *Req, res *Res) {})
+		app.Use("/main", router)
+
+		as.Len(app.routes, 3)
+		as.Equal("GET", app.routes[0].method)
+		as.Equal("no-sub", app.routes[0].prepath)
+		//as.Equal("/no-sub", app.routes[0].parentIndex)
+		as.Len(app.routes[0].routeParams, 1)
+		as.Equal(&routeParam{name: "name0", isParam: true}, app.routes[0].routeParams[0])
+		as.Nil(app.routes[0].handlerFuncNext)
+		as.Nil(app.routes[0].middleware)
+
+		as.Equal("GET", app.routes[1].method)
+		as.Equal("main", app.routes[1].prepath)
+		//as.Equal("/main/1", app.routes[1].parentIndex)
+		as.Len(app.routes[1].routeParams, 2)
+		as.Equal(&routeParam{name: "1", isParam: false}, app.routes[1].routeParams[0])
+		as.Equal(&routeParam{name: "name1", isParam: true}, app.routes[1].routeParams[1])
+		as.Nil(app.routes[1].handlerFuncNext)
+		as.Nil(app.routes[1].middleware)
+
+		as.Equal("GET", app.routes[2].method)
+		as.Equal("main", app.routes[2].prepath)
+		//as.Equal("/main/2", app.routes[2].parentIndex)
+		as.Len(app.routes[2].routeParams, 2)
+		as.Equal(&routeParam{name: "2", isParam: false}, app.routes[2].routeParams[0])
+		as.Equal(&routeParam{name: "name2", isParam: true}, app.routes[2].routeParams[1])
+		as.Nil(app.routes[2].handlerFuncNext)
+		as.Nil(app.routes[2].middleware)
 	}
 }
+
+//
+//func TestMid(t *testing.T) {
+//	{
+//		// change req
+//		app, ts, e, _ := newTestServer(t)
+//		defer ts.Close()
+//
+//		app.Use(func(req *Req, res *Res) HandlerFunc {
+//			req.AddContext("test", "test-value")
+//			return nil
+//		})
+//		app.Get("/", func(req *Req, res *Res) { res.Send(req.GetContext("test")) })
+//		e.GET("/").Expect().Status(http.StatusOK).Text().Equal("test-value")
+//	}
+//	{
+//		// get response
+//		var r interface{}
+//		app, ts, e, as := newTestServer(t)
+//		defer ts.Close()
+//
+//		app.Use(func(req *Req, res *Res) HandlerFunc {
+//			return func(req *Req, res *Res) {
+//				r = res.Response
+//			}
+//		})
+//		app.Get("/", func(req *Req, res *Res) { res.Send("this is response") })
+//		e.GET("/").Expect().Status(http.StatusOK)
+//		as.Equal("this is response", r)
+//	}
+//	{
+//		// todo exec before response
+//		// need ?
+//	}
+//}

@@ -4,8 +4,19 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 )
+
+// HandlerFunc gor handler func like http.HandlerFunc func(ResponseWriter, *Request)
+type HandlerFunc func(*Req, *Res)
+
+// Next exec next handler or mid
+type Next func()
+
+// HandlerFuncNext gor handler func like http.HandlerFunc func(ResponseWriter, *Request),
+// but return HandlerFunc to do somrthing at defer time
+type HandlerFuncNext func(*Req, *Res, Next)
 
 type routeParam struct {
 	name    string
@@ -13,19 +24,31 @@ type routeParam struct {
 }
 
 type route struct {
+	handlerFunc     HandlerFunc
+	handlerFuncNext HandlerFuncNext
+	middleware      Middleware
+
 	method      string
-	handler     HandlerFunc
-	midIndex    int
 	prepath     string
 	routeParams []*routeParam
+
+	//parentIndex string
+}
+type matchedRoute struct {
+	index  int
+	params map[string]string
 }
 
 func (r *route) copy() *route {
 	var t = &route{
-		method:   r.method,
-		handler:  r.handler, // not deep copy
-		midIndex: r.midIndex,
-		prepath:  r.prepath,
+		handlerFunc:     r.handlerFunc,
+		handlerFuncNext: r.handlerFuncNext,
+		middleware:      r.middleware,
+
+		method:  r.method,
+		prepath: r.prepath,
+
+		//parentIndex: r.parentIndex,
 	}
 	var rs []*routeParam
 	for _, v := range r.routeParams {
@@ -49,7 +72,7 @@ func copyRouteSlice(routes []*route) []*route {
 // Route route
 type Route struct {
 	routes []*route
-	mids   []HandlerFuncDefer
+	mids   []HandlerFuncNext
 }
 
 // NewRoute return *Router
@@ -57,7 +80,7 @@ func NewRoute() *Route {
 	return &Route{}
 }
 
-func (r *Route) handlerRoute(method string, pattern string, h HandlerFunc) {
+func (r *Route) addHandlerFuncRoute(method string, pattern string, h HandlerFunc, parentrouteParams []*routeParam) {
 	if !strings.HasPrefix(pattern, "/") {
 		panic("not start with /")
 	}
@@ -76,7 +99,84 @@ func (r *Route) handlerRoute(method string, pattern string, h HandlerFunc) {
 		paths = paths[1:]
 	}
 
-	//g.midWithPath[route] = len(g.middlewares) - 1 todo
+	//var rps []*routeParam
+	for _, i := range paths {
+		if strings.HasPrefix(i, ":") {
+			parentrouteParams = append(parentrouteParams, &routeParam{name: i[1:], isParam: true})
+		} else {
+			parentrouteParams = append(parentrouteParams, &routeParam{name: i, isParam: false})
+		}
+	}
+	fmt.Printf("handler func params %+v\n", parentrouteParams)
+	r.routes = append(r.routes, &route{
+		handlerFunc: h,
+
+		method:      method,
+		prepath:     prepath,
+		routeParams: parentrouteParams,
+
+		//parentIndex: pattern,
+	})
+}
+
+func (r *Route) addHandlerFuncNextRoute(method string, pattern string, h HandlerFuncNext, parentrouteParams []*routeParam) {
+	if !strings.HasPrefix(pattern, "/") {
+		panic("not start with /")
+	}
+
+	URL, err := url.Parse(pattern)
+	if err != nil {
+		panic(fmt.Sprintf("pattern invalid: %s", pattern))
+	}
+
+	paths := strings.Split(URL.Path[1:], "/")
+	var prepath string
+	if strings.HasPrefix(paths[0], ":") {
+		prepath = ""
+	} else {
+		prepath = paths[0]
+		paths = paths[1:]
+	}
+
+	//var rps []*routeParam
+	for _, i := range paths {
+		if strings.HasPrefix(i, ":") {
+			parentrouteParams = append(parentrouteParams, &routeParam{name: i[1:], isParam: true})
+		} else {
+			parentrouteParams = append(parentrouteParams, &routeParam{name: i, isParam: false})
+		}
+	}
+
+	r.routes = append(r.routes, &route{
+		handlerFuncNext: h,
+
+		method:      method,
+		prepath:     prepath,
+		routeParams: parentrouteParams,
+
+		//parentIndex: pattern,
+	})
+}
+
+func (r *Route) addMiddlerwareRoute(method string, pattern string, mid Middleware) {
+	if !strings.HasPrefix(pattern, "/") {
+		panic("not start with /")
+	}
+
+	URL, err := url.Parse(pattern)
+	if err != nil {
+		panic(fmt.Sprintf("pattern invalid: %s", pattern))
+	}
+
+	paths := strings.Split(URL.Path[1:], "/")
+	var prepath string
+	if strings.HasPrefix(paths[0], ":") {
+		prepath = ""
+	} else {
+		prepath = paths[0]
+		paths = paths[1:]
+	}
+
 	var rps []*routeParam
 	for _, i := range paths {
 		if strings.HasPrefix(i, ":") {
@@ -87,98 +187,211 @@ func (r *Route) handlerRoute(method string, pattern string, h HandlerFunc) {
 	}
 
 	r.routes = append(r.routes, &route{
+		middleware: mid,
+
 		method:      method,
-		handler:     h,
-		midIndex:    len(r.mids) - 1,
 		prepath:     prepath,
 		routeParams: rps,
+
+		//parentIndex: pattern,
 	})
 }
 
 // Get http get method
 func (r *Route) Get(pattern string, h HandlerFunc) {
-	r.handlerRoute(http.MethodGet, pattern, h)
+	r.addHandlerFuncRoute(http.MethodGet, pattern, h, []*routeParam{})
 }
 
 // Head http head method
 func (r *Route) Head(pattern string, h HandlerFunc) {
-	r.handlerRoute(http.MethodHead, pattern, h)
+	r.addHandlerFuncRoute(http.MethodHead, pattern, h, []*routeParam{})
 }
 
 // Post http post method
 func (r *Route) Post(pattern string, h HandlerFunc) {
-	r.handlerRoute(http.MethodPost, pattern, h)
+	r.addHandlerFuncRoute(http.MethodPost, pattern, h, []*routeParam{})
 }
 
 // Put http put method
 func (r *Route) Put(pattern string, h HandlerFunc) {
-	r.handlerRoute(http.MethodPut, pattern, h)
+	r.addHandlerFuncRoute(http.MethodPut, pattern, h, []*routeParam{})
 }
 
 // Patch http patch method
 func (r *Route) Patch(pattern string, h HandlerFunc) {
-	r.handlerRoute(http.MethodPatch, pattern, h)
+	r.addHandlerFuncRoute(http.MethodPatch, pattern, h, []*routeParam{})
 }
 
 // Delete http delete method
 func (r *Route) Delete(pattern string, h HandlerFunc) {
-	r.handlerRoute(http.MethodDelete, pattern, h)
+	r.addHandlerFuncRoute(http.MethodDelete, pattern, h, []*routeParam{})
 }
 
 // Connect http connect method
 func (r *Route) Connect(pattern string, h HandlerFunc) {
-	r.handlerRoute(http.MethodConnect, pattern, h)
+	r.addHandlerFuncRoute(http.MethodConnect, pattern, h, []*routeParam{})
 }
 
 // Options http options method
 func (r *Route) Options(pattern string, h HandlerFunc) {
-	r.handlerRoute(http.MethodOptions, pattern, h)
+	r.addHandlerFuncRoute(http.MethodOptions, pattern, h, []*routeParam{})
 }
 
 // Trace http trace method
 func (r *Route) Trace(pattern string, h HandlerFunc) {
-	r.handlerRoute(http.MethodTrace, pattern, h)
+	r.addHandlerFuncRoute(http.MethodTrace, pattern, h, []*routeParam{})
 }
 
 // Use http trace method
-func (r *Route) Use(hd HandlerFuncDefer) {
-	r.mids = append(r.mids, hd)
+//
+// must belong one of below type
+// string
+// type HandlerFunc func(*Req, *Res)
+// type HandlerFuncNext func(*Req, *Res, Next)
+// type Middleware interface
+func (r *Route) Use(hs ...interface{}) {
+	if len(hs) == 1 {
+		r.useWithOne("/", hs[0])
+		return
+	}
+
+	first := hs[0]
+	firstType := reflect.TypeOf(first)
+	if firstType.Kind() == reflect.String {
+		firstValue := reflect.ValueOf(first)
+		pattern := firstValue.String()
+		for _, h := range hs[1:] {
+			r.useWithOne(pattern, h)
+		}
+	} else {
+		for _, h := range hs {
+			r.useWithOne("/", h)
+		}
+	}
+}
+
+func (r *Route) useWithOne(pattern string, h interface{}) {
+	// todo use 应该处理签名的params
+	var err error = nil
+	defer func() {
+		if err != nil {
+			panic(err)
+		}
+	}()
+	hType := reflect.TypeOf(h)
+	switch hType.Kind() {
+	case reflect.Func:
+		switch h.(type) {
+		case func(req *Req, res *Res):
+			if f, ok := h.(func(req *Req, res *Res)); ok {
+				r.useWithHandlerFunc("ALL", pattern, HandlerFunc(f), []*routeParam{})
+			} else {
+				err = fmt.Errorf("cannot convert to gor.HandlerFunc")
+			}
+		case func(req *Req, res *Res, next Next):
+			if f, ok := h.(func(req *Req, res *Res, next Next)); ok {
+				r.useWithHandlerFuncNext("ALL", pattern, HandlerFuncNext(f), []*routeParam{})
+			} else {
+				err = fmt.Errorf("cannot convert to gor.HandlerFuncNext")
+			}
+		default:
+			err = fmt.Errorf("maybe you are transmiting gor.HandlerFunc / gor.HandlerFuncNext, but the function signature is wrong")
+		}
+	case reflect.Struct:
+		err = fmt.Errorf("maybe you are transmiting gor.Middleware, but please use Pointer, not Struct")
+	case reflect.Ptr:
+		if f, ok := h.(Middleware); ok {
+			r.useWithMiddleware("ALL", pattern, Middleware(f), []*routeParam{}) // todo parentrouteParams
+		} else {
+			err = fmt.Errorf("cannot convert to gor.Middleware")
+		}
+	default:
+		err = fmt.Errorf("when middleware length is one, that type must belong gor.HandlerFunc / gor.HandlerFuncNext / gor.Route, but get %s", hType.Kind())
+	}
+}
+
+func (r *Route) handler(pattern string) []*route {
+	return copyRouteSlice(r.routes)
 }
 
 // UseN http trace method
-func (r *Route) UseN(pattern string, m Mid) {
-	midRouter := m.handler(pattern)
-	patternPaths := strings.Split(strings.TrimPrefix(pattern, "/"), "/")
-	_, matchIndex := matchRouter("ALL", patternPaths, r.routes)
-
-	var routeParams []*routeParam
-	if matchIndex == -1 {
-		for _, v := range patternPaths[1:] {
-			routeParams = append(routeParams, &routeParam{name: v, isParam: strings.HasPrefix(v, ":")})
-		}
-	} else {
-		routeParams = append(routeParams, r.routes[matchIndex].routeParams...)
-	}
-
-	for _, v := range midRouter.routes {
-		var subRouteParams []*routeParam
-		if v.prepath != "" {
-			subRouteParams = append(routeParams, &routeParam{name: v.prepath, isParam: false})
-		}
-		subRouteParams = append(subRouteParams, v.routeParams...)
-		r.routes = append(r.routes, &route{
-			method:      "ALL",
-			handler:     v.handler,
-			prepath:     patternPaths[0],
-			routeParams: subRouteParams,
-		})
-	}
-	r.mids = append(r.mids, midRouter.mids...)
+func (r *Route) useWithHandlerFunc(method, pattern string, h HandlerFunc, parentrouteParams []*routeParam) {
+	fmt.Printf("get pattern: %s, HandlerFunc: %+v\n", pattern, h)
+	r.addHandlerFuncRoute(method, pattern, h, parentrouteParams)
 }
 
-func (r *Route) handler(pattern string) *Route {
-	return &Route{
-		routes: copyRouteSlice(r.routes),
-		mids:   r.mids,
-	}
+// UseN http trace method
+func (r *Route) useWithHandlerFuncNext(method, pattern string, h HandlerFuncNext, parentrouteParams []*routeParam) {
+	fmt.Printf("get pattern: %s, HandlerFuncNext: %+v\n", pattern, h)
+	r.addHandlerFuncNextRoute(method, pattern, h, parentrouteParams)
 }
+
+// UseN http trace method
+func (r *Route) useWithMiddleware(method, pattern string, mid Middleware, parentrouteParams []*routeParam) {
+	parentRoutes := copyRouteSlice(r.routes)
+	subRoutes := mid.handler(pattern)
+	fmt.Printf("get pattern: %s, Middleware: %+v\n", pattern, mid)
+	fmt.Printf("parentRoutes %+v\n", parentRoutes)
+	//fmt.Printf("subRoutes %+v\n", subRoutes)
+	for _, subRoute := range subRoutes {
+		/*
+	method      string
+	routeParams []*routeParam
+
+		*/
+		fmt.Printf("route 111 ==== %s  222==== %s\n", parentrouteParams, subRoute.routeParams)
+		parentrouteParams = append(parentrouteParams, subRoute.routeParams...)
+		if subRoute.handlerFunc != nil {
+			r.useWithHandlerFunc(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.handlerFunc, parentrouteParams)
+		} else if subRoute.handlerFuncNext != nil {
+			r.useWithHandlerFuncNext(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.handlerFuncNext, parentrouteParams)
+		} else if subRoute.middleware != nil {
+			r.useWithMiddleware(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.middleware, parentrouteParams)
+		} else {
+			panic("notklsadjlfajs")
+		}
+		//fmt.Printf("subRoute %+v\n", subRoute)
+		//
+		//r.routes = append(r.routes, &route{
+		//	method:          "ALL",
+		//	prepath:         pattern,
+		//	routeParams:     subRoute.routeParams,
+		//	parentIndex:     pattern,
+		//	handlerFunc:     subRoute.handlerFunc,
+		//	handlerFuncNext: subRoute.handlerFuncNext,
+		//	middleware:      subRoute.middleware,
+		//})
+	}
+	//r.addMiddlerwareRoute("ALL", pattern, mid)
+}
+
+//// UseN http trace method
+//func (r *Route) UseN(pattern string, m Middleware) {
+//	midRouter := m.handler(pattern)
+//	patternPaths := strings.Split(strings.TrimPrefix(pattern, "/"), "/")
+//	_, matchIndex := matchRouter("ALL", patternPaths, r.routes)
+//
+//	var routeParams []*routeParam
+//	if matchIndex == -1 {
+//		for _, v := range patternPaths[1:] {
+//			routeParams = append(routeParams, &routeParam{name: v, isParam: strings.HasPrefix(v, ":")})
+//		}
+//	} else {
+//		routeParams = append(routeParams, r.routes[matchIndex].routeParams...)
+//	}
+//
+//	for _, v := range midRouter.routes {
+//		var subRouteParams []*routeParam
+//		if v.prepath != "" {
+//			subRouteParams = append(routeParams, &routeParam{name: v.prepath, isParam: false})
+//		}
+//		subRouteParams = append(subRouteParams, v.routeParams...)
+//		r.routes = append(r.routes, &route{
+//			method:      "ALL",
+//			handlerFunc: v.handlerFunc,
+//			prepath:     patternPaths[0],
+//			routeParams: subRouteParams,
+//		})
+//	}
+//	r.mids = append(r.mids, midRouter.mids...)
+//}
