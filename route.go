@@ -69,6 +69,35 @@ func copyRouteSlice(routes []*route) []*route {
 	return rs
 }
 
+func copyRouteParamSlice(routeParams []*routeParam) []*routeParam {
+	var rs []*routeParam
+	for _, v := range routeParams {
+		rs = append(rs, &routeParam{
+			name:    v.name,
+			isParam: v.isParam,
+		})
+	}
+	return rs
+}
+
+func mergeRouteParamSlice(parentRouteParams []*routeParam, subRouteParams ...*routeParam) []*routeParam {
+	var rs []*routeParam
+	for _, v := range parentRouteParams {
+		rs = append(rs, &routeParam{
+			name:    v.name,
+			isParam: v.isParam,
+		})
+	}
+	for _, v := range subRouteParams {
+		rs = append(rs, &routeParam{
+			name:    v.name,
+			isParam: v.isParam,
+		})
+	}
+	return rs
+}
+
+//[]*routeParam
 // Route route
 type Route struct {
 	routes []*route
@@ -81,6 +110,10 @@ func NewRoute() *Route {
 }
 
 func (r *Route) addHandlerFuncRoute(method string, pattern string, h HandlerFunc, parentrouteParams []*routeParam) {
+	fmt.Printf("method %s, pattern %s, h %s, parentrouteParams%s\n ", method, pattern, h, parentrouteParams)
+	if pattern == "*" {
+		pattern = "/" + pattern
+	}
 	if !strings.HasPrefix(pattern, "/") {
 		panic("not start with /")
 	}
@@ -102,12 +135,14 @@ func (r *Route) addHandlerFuncRoute(method string, pattern string, h HandlerFunc
 	//var rps []*routeParam
 	for _, i := range paths {
 		if strings.HasPrefix(i, ":") {
-			parentrouteParams = append(parentrouteParams, &routeParam{name: i[1:], isParam: true})
+			//parentrouteParams = append(parentrouteParams, &routeParam{name: i[1:], isParam: true})
+			parentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: i[1:], isParam: true})
 		} else {
-			parentrouteParams = append(parentrouteParams, &routeParam{name: i, isParam: false})
+			//parentrouteParams = append(parentrouteParams, &routeParam{name: i, isParam: false})
+			parentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: i, isParam: false})
 		}
 	}
-	fmt.Printf("handler func params %+v\n", parentrouteParams)
+	//fmt.Printf("handler func params %+v\n", parentrouteParams)
 	r.routes = append(r.routes, &route{
 		handlerFunc: h,
 
@@ -120,6 +155,10 @@ func (r *Route) addHandlerFuncRoute(method string, pattern string, h HandlerFunc
 }
 
 func (r *Route) addHandlerFuncNextRoute(method string, pattern string, h HandlerFuncNext, parentrouteParams []*routeParam) {
+	//fmt.Printf("pattern", pattern)
+	if pattern == "*" {
+		pattern = "/" + pattern
+	}
 	if !strings.HasPrefix(pattern, "/") {
 		panic("not start with /")
 	}
@@ -141,9 +180,11 @@ func (r *Route) addHandlerFuncNextRoute(method string, pattern string, h Handler
 	//var rps []*routeParam
 	for _, i := range paths {
 		if strings.HasPrefix(i, ":") {
-			parentrouteParams = append(parentrouteParams, &routeParam{name: i[1:], isParam: true})
+			//parentrouteParams = append(parentrouteParams, &routeParam{name: i[1:], isParam: true})
+			parentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: i[1:], isParam: true})
 		} else {
-			parentrouteParams = append(parentrouteParams, &routeParam{name: i, isParam: false})
+			//parentrouteParams = append(parentrouteParams, &routeParam{name: i, isParam: false})
+			parentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: i, isParam: false})
 		}
 	}
 
@@ -159,6 +200,9 @@ func (r *Route) addHandlerFuncNextRoute(method string, pattern string, h Handler
 }
 
 func (r *Route) addMiddlerwareRoute(method string, pattern string, mid Middleware) {
+	if pattern == "*" {
+		pattern = "/" + pattern
+	}
 	if !strings.HasPrefix(pattern, "/") {
 		panic("not start with /")
 	}
@@ -251,7 +295,7 @@ func (r *Route) Trace(pattern string, h HandlerFunc) {
 // type Middleware interface
 func (r *Route) Use(hs ...interface{}) {
 	if len(hs) == 1 {
-		r.useWithOne("/", hs[0])
+		r.useWithOne("*", hs[0])
 		return
 	}
 
@@ -265,7 +309,7 @@ func (r *Route) Use(hs ...interface{}) {
 		}
 	} else {
 		for _, h := range hs {
-			r.useWithOne("/", h)
+			r.useWithOne("*", h)
 		}
 	}
 }
@@ -290,7 +334,7 @@ func (r *Route) useWithOne(pattern string, h interface{}) {
 			}
 		case func(req *Req, res *Res, next Next):
 			if f, ok := h.(func(req *Req, res *Res, next Next)); ok {
-				r.useWithHandlerFuncNext("ALL", pattern, HandlerFuncNext(f), []*routeParam{})
+				r.useWithHandlerFuncNext("ALL", pattern, HandlerFuncNext(f), []*routeParam{}) // todo parentrouteParams
 			} else {
 				err = fmt.Errorf("cannot convert to gor.HandlerFuncNext")
 			}
@@ -316,53 +360,68 @@ func (r *Route) handler(pattern string) []*route {
 
 // UseN http trace method
 func (r *Route) useWithHandlerFunc(method, pattern string, h HandlerFunc, parentrouteParams []*routeParam) {
-	fmt.Printf("get pattern: %s, HandlerFunc: %+v\n", pattern, h)
+	//fmt.Printf("get pattern: %s, HandlerFunc: %+v\n", pattern, h)
 	r.addHandlerFuncRoute(method, pattern, h, parentrouteParams)
 }
 
 // UseN http trace method
 func (r *Route) useWithHandlerFuncNext(method, pattern string, h HandlerFuncNext, parentrouteParams []*routeParam) {
-	fmt.Printf("get pattern: %s, HandlerFuncNext: %+v\n", pattern, h)
+	//fmt.Printf("get pattern: %s, HandlerFuncNext: %+v\n", pattern, h)
 	r.addHandlerFuncNextRoute(method, pattern, h, parentrouteParams)
 }
 
 // UseN http trace method
 func (r *Route) useWithMiddleware(method, pattern string, mid Middleware, parentrouteParams []*routeParam) {
-	parentRoutes := copyRouteSlice(r.routes)
+	//parentRoutes := copyRouteSlice(r.routes)
 	subRoutes := mid.handler(pattern)
-	fmt.Printf("get pattern: %s, Middleware: %+v\n", pattern, mid)
-	fmt.Printf("parentRoutes %+v\n", parentRoutes)
-	//fmt.Printf("subRoutes %+v\n", subRoutes)
+	//fmt.Printf("get pattern: %s, Middleware: %+v\n", pattern, mid)
+	//fmt.Printf("parentRoutes %+v\n", parentRoutes)
 	for _, subRoute := range subRoutes {
-		/*
-	method      string
-	routeParams []*routeParam
-
-		*/
-		fmt.Printf("route 111 ==== %s  222==== %s\n", parentrouteParams, subRoute.routeParams)
-		parentrouteParams = append(parentrouteParams, subRoute.routeParams...)
+		fmt.Printf("subRoute %s\n", subRoute)
+		var newParentrouteParams []*routeParam
+		if subRoute.prepath != "" {
+			fmt.Printf("1\n")
+			if strings.HasPrefix(subRoute.prepath, ":") {
+				fmt.Printf("2\n")
+				newParentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: subRoute.prepath[1:], isParam: true})
+			} else {
+				fmt.Printf("3\n")
+				newParentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: subRoute.prepath, isParam: false})
+			}
+			fmt.Printf("4\n")
+		}
+		fmt.Printf("5\n")
+		newParentrouteParams = mergeRouteParamSlice(newParentrouteParams, subRoute.routeParams...)
+		//fmt.Printf("newParentrouteParams %s\n", newParentrouteParams)
 		if subRoute.handlerFunc != nil {
-			r.useWithHandlerFunc(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.handlerFunc, parentrouteParams)
+			fmt.Printf("6\n")
+			r.routes = append(r.routes, &route{
+				handlerFunc: subRoute.handlerFunc,
+				method:      subRoute.method,
+				prepath:     pattern[1:],
+				routeParams: newParentrouteParams,
+				//parentIndex: pattern,
+			})
+			//r.useWithHandlerFunc(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.handlerFunc, newParentrouteParams)
 		} else if subRoute.handlerFuncNext != nil {
-			r.useWithHandlerFuncNext(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.handlerFuncNext, parentrouteParams)
+			fmt.Printf("7\n")
+			fmt.Printf("6\n")
+			r.routes = append(r.routes, &route{
+				handlerFuncNext: subRoute.handlerFuncNext,
+				method:          subRoute.method,
+				prepath:         pattern[1:],
+				routeParams:     newParentrouteParams,
+				//parentIndex: pattern,
+			})
+			//r.useWithHandlerFuncNext(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.handlerFuncNext, newParentrouteParams)
 		} else if subRoute.middleware != nil {
-			r.useWithMiddleware(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.middleware, parentrouteParams)
+			fmt.Printf("8\n")
+			r.useWithMiddleware(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.middleware, newParentrouteParams)
 		} else {
+			fmt.Printf("9\n")
 			panic("notklsadjlfajs")
 		}
-		//fmt.Printf("subRoute %+v\n", subRoute)
-		//
-		//r.routes = append(r.routes, &route{
-		//	method:          "ALL",
-		//	prepath:         pattern,
-		//	routeParams:     subRoute.routeParams,
-		//	parentIndex:     pattern,
-		//	handlerFunc:     subRoute.handlerFunc,
-		//	handlerFuncNext: subRoute.handlerFuncNext,
-		//	middleware:      subRoute.middleware,
-		//})
 	}
-	//r.addMiddlerwareRoute("ALL", pattern, mid)
 }
 
 //// UseN http trace method

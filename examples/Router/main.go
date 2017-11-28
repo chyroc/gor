@@ -5,21 +5,24 @@ import (
 	"time"
 
 	"github.com/Chyroc/gor"
+	"fmt"
 )
 
-func Logger(req *gor.Req, res *gor.Res) gor.HandlerFunc {
+func Logger(req *gor.Req, res *gor.Res, next gor.Next) {
 	req.AddContext("time", time.Now())
-	return func(req *gor.Req, res *gor.Res) {
-		startTime := req.GetContext("time").(time.Time)
-		log.Printf("startTime %+v , endTime %+v\n", startTime.UTC(), time.Now().UTC())
-	}
+
+	next()
+
+	fmt.Printf("========================")
+
+	//startTime := req.GetContext("time").(time.Time)
+	//log.Printf("startTime %+v , endTime %+v\n", startTime.UTC(), time.Now().UTC())
 }
 
 func main() {
 	app := gor.NewGor()
 	router := gor.NewRouter()
 
-	router.Use(Logger)
 	router.Get("/sub/:uu", func(req *gor.Req, res *gor.Res) {
 		time.Sleep(time.Microsecond * 100)
 		res.JSON(map[string]interface{}{
@@ -27,8 +30,9 @@ func main() {
 			"params": req.Params,
 		})
 	})
+	app.Use(Logger)
 
-	app.UseN("/user", router)
+	app.Use("/m", router)
 
 	log.Fatal(app.Listen(":3000"))
 }

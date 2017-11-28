@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"fmt"
 
 	"github.com/gavv/httpexpect"
 	"github.com/stretchr/testify/assert"
@@ -70,7 +71,7 @@ func TestUse(t *testing.T) {
 	}
 	{
 		// app use and router
-		app, ts, _, as := newTestServer(t)
+		app, ts, e, as := newTestServer(t)
 		defer ts.Close()
 		router := NewRouter()
 		app.Get("/no-sub", func(req *Req, res *Res) {})
@@ -101,15 +102,19 @@ func TestUse(t *testing.T) {
 		as.Equal(&routeParam{name: "2", isParam: false}, app.routes[2].routeParams[0])
 		as.Nil(app.routes[2].handlerFuncNext)
 		as.Nil(app.routes[2].middleware)
+
+		e.GET("/no-sub").Expect().Status(http.StatusOK).Text().Equal("")
+		e.GET("/main/1").Expect().Status(http.StatusOK).Text().Equal("")
+		e.GET("/main/2").Expect().Status(http.StatusOK).Text().Equal("")
 	}
 	{
 		// app use and router + params
-		app, ts, _, as := newTestServer(t)
+		app, ts, e, as := newTestServer(t)
 		defer ts.Close()
 		router := NewRouter()
-		app.Get("/no-sub/:name0", func(req *Req, res *Res) {})
-		router.Get("/1/:name1", func(req *Req, res *Res) {})
-		router.Get("/2/:name2", func(req *Req, res *Res) {})
+		app.Get("/no-sub/:name0", func(req *Req, res *Res) { res.JSON(req.Params) })
+		router.Get("/1/:name1", func(req *Req, res *Res) { res.JSON(req.Params) })
+		router.Get("/2/:name2", func(req *Req, res *Res) { res.JSON(req.Params) })
 		app.Use("/main", router)
 
 		as.Len(app.routes, 3)
@@ -125,6 +130,7 @@ func TestUse(t *testing.T) {
 		as.Equal("main", app.routes[1].prepath)
 		//as.Equal("/main/1", app.routes[1].parentIndex)
 		as.Len(app.routes[1].routeParams, 2)
+		fmt.Printf("app.routes[1].routeParams %s\n", app.routes[1].routeParams)
 		as.Equal(&routeParam{name: "1", isParam: false}, app.routes[1].routeParams[0])
 		as.Equal(&routeParam{name: "name1", isParam: true}, app.routes[1].routeParams[1])
 		as.Nil(app.routes[1].handlerFuncNext)
@@ -138,40 +144,9 @@ func TestUse(t *testing.T) {
 		as.Equal(&routeParam{name: "name2", isParam: true}, app.routes[2].routeParams[1])
 		as.Nil(app.routes[2].handlerFuncNext)
 		as.Nil(app.routes[2].middleware)
+
+		e.GET("/no-sub/nnn").Expect().Status(http.StatusOK).JSON().Equal(map[string]string{"name0": "nnn"})
+		e.GET("/main/1/mmm").Expect().Status(http.StatusOK).JSON().Equal(map[string]string{"name1": "mmm"})
+		e.GET("/main/2/jjj").Expect().Status(http.StatusOK).JSON().Equal(map[string]string{"name2": "jjj"})
 	}
 }
-
-//
-//func TestMid(t *testing.T) {
-//	{
-//		// change req
-//		app, ts, e, _ := newTestServer(t)
-//		defer ts.Close()
-//
-//		app.Use(func(req *Req, res *Res) HandlerFunc {
-//			req.AddContext("test", "test-value")
-//			return nil
-//		})
-//		app.Get("/", func(req *Req, res *Res) { res.Send(req.GetContext("test")) })
-//		e.GET("/").Expect().Status(http.StatusOK).Text().Equal("test-value")
-//	}
-//	{
-//		// get response
-//		var r interface{}
-//		app, ts, e, as := newTestServer(t)
-//		defer ts.Close()
-//
-//		app.Use(func(req *Req, res *Res) HandlerFunc {
-//			return func(req *Req, res *Res) {
-//				r = res.Response
-//			}
-//		})
-//		app.Get("/", func(req *Req, res *Res) { res.Send("this is response") })
-//		e.GET("/").Expect().Status(http.StatusOK)
-//		as.Equal("this is response", r)
-//	}
-//	{
-//		// todo exec before response
-//		// need ?
-//	}
-//}
