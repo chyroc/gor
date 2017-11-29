@@ -13,7 +13,7 @@ import (
 type HandlerFunc func(*Req, *Res)
 
 // Next exec next handler or mid
-type Next func()
+type Next func(...string)
 
 // HandlerFuncNext gor handler func like http.HandlerFunc func(ResponseWriter, *Request),
 // but return HandlerFunc to do somrthing at defer time
@@ -74,37 +74,8 @@ func NewRoute() *Route {
 	return &Route{}
 }
 
-func (r *Route) addHandlerFuncAndNextRoute(method string, pattern string, matchType matchType, h HandlerFunc, hn HandlerFuncNext) {
-	if !strings.HasPrefix(pattern, "/") {
-		panic("must start with /")
-	}
-	if strings.HasSuffix(pattern, "/") && pattern != "/" {
-		pattern = pattern[:len(pattern)-1]
-	}
-
-	URL, err := url.Parse(pattern)
-	if err != nil {
-		panic(fmt.Sprintf("pattern invalid: %s", pattern))
-	}
-
-	routePath := URL.Path
-
-	var routeH = &route{
-		method:    method,
-		routePath: routePath,
-		matchType: matchType,
-
-		routePathReg: genMatchPathReg(routePath),
-	}
-	if h != nil {
-		routeH.handlerFunc = h
-	} else if hn != nil {
-		routeH.handlerFuncNext = hn
-	} else {
-		panic("handlerFunc or handlerFuncNext cannot be both nil")
-	}
-
-	r.routes = append(r.routes, routeH)
+func (r *Route) handler(pattern string) []*route {
+	return copyRouteSlice(r.routes)
 }
 
 // Get http get method
@@ -181,7 +152,6 @@ func (r *Route) Use(hs ...interface{}) {
 }
 
 func (r *Route) useWithOne(pattern string, h interface{}) {
-	// todo use 应该处理签名的params
 	var err error
 	defer func() {
 		if err != nil {
@@ -194,13 +164,13 @@ func (r *Route) useWithOne(pattern string, h interface{}) {
 		switch h.(type) {
 		case func(req *Req, res *Res):
 			if f, ok := h.(func(req *Req, res *Res)); ok {
-				r.useWithHandlerFunc("ALL", pattern, preMatch, HandlerFunc(f))
+				r.addHandlerFuncAndNextRoute("ALL", pattern, preMatch, HandlerFunc(f), nil)
 			} else {
 				err = fmt.Errorf("cannot convert to gor.HandlerFunc")
 			}
 		case func(req *Req, res *Res, next Next):
 			if f, ok := h.(func(req *Req, res *Res, next Next)); ok {
-				r.useWithHandlerFuncNext("ALL", pattern, preMatch, HandlerFuncNext(f)) // todo parentrouteParams
+				r.addHandlerFuncAndNextRoute("ALL", pattern, preMatch, nil, HandlerFuncNext(f))
 			} else {
 				err = fmt.Errorf("cannot convert to gor.HandlerFuncNext")
 			}
@@ -220,18 +190,37 @@ func (r *Route) useWithOne(pattern string, h interface{}) {
 	}
 }
 
-func (r *Route) handler(pattern string) []*route {
-	return copyRouteSlice(r.routes)
-}
+func (r *Route) addHandlerFuncAndNextRoute(method string, pattern string, matchType matchType, h HandlerFunc, hn HandlerFuncNext) {
+	if !strings.HasPrefix(pattern, "/") {
+		panic("must start with /")
+	}
+	if strings.HasSuffix(pattern, "/") && pattern != "/" {
+		pattern = pattern[:len(pattern)-1]
+	}
 
-func (r *Route) useWithHandlerFunc(method, pattern string, matchType matchType, h HandlerFunc) {
-	//fmt.Printf("get pattern: %s, HandlerFunc: %+v\n", pattern, h)
-	r.addHandlerFuncAndNextRoute(method, pattern, matchType, h, nil)
-}
+	URL, err := url.Parse(pattern)
+	if err != nil {
+		panic(fmt.Sprintf("pattern invalid: %s", pattern))
+	}
 
-func (r *Route) useWithHandlerFuncNext(method, pattern string, matchType matchType, h HandlerFuncNext) {
-	//fmt.Printf("get pattern: %s, HandlerFuncNext: %+v\n", pattern, h)
-	r.addHandlerFuncAndNextRoute(method, pattern, matchType, nil, h)
+	routePath := URL.Path
+
+	var routeH = &route{
+		method:    method,
+		routePath: routePath,
+		matchType: matchType,
+
+		routePathReg: genMatchPathReg(routePath),
+	}
+	if h != nil {
+		routeH.handlerFunc = h
+	} else if hn != nil {
+		routeH.handlerFuncNext = hn
+	} else {
+		panic("handlerFunc or handlerFuncNext cannot be both nil")
+	}
+
+	r.routes = append(r.routes, routeH)
 }
 
 func (r *Route) useWithMiddleware(method, pattern string, matchType matchType, mid Middleware) {
