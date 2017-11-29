@@ -3,7 +3,6 @@ package gor
 import (
 	"log"
 	"strings"
-	"fmt"
 	"regexp"
 )
 
@@ -19,7 +18,7 @@ func NewGor() *Gor {
 	}
 }
 
-var debug = true
+var debug = false
 
 func debugPrintf(format string, a ...interface{}) {
 	if debug {
@@ -28,6 +27,8 @@ func debugPrintf(format string, a ...interface{}) {
 }
 
 func genMatchPathReg(routePath string) *regexp.Regexp {
+	debugPrintf(routePath)
+
 	if strings.HasSuffix(routePath, "/") {
 		routePath = routePath[:len(routePath)-1]
 	}
@@ -37,7 +38,7 @@ func genMatchPathReg(routePath string) *regexp.Regexp {
 		var regS []string
 		for _, v := range routePaths {
 			if strings.HasPrefix(v, ":") {
-				regS = append(regS, `(?P<`+strings.ToLower(v[1:])+`>.*[^/])`)
+				regS = append(regS, `(?P<`+strings.ToLower(v[1:])+`>.*)`)
 			} else {
 				regS = append(regS, v)
 			}
@@ -48,7 +49,7 @@ func genMatchPathReg(routePath string) *regexp.Regexp {
 	return nil
 }
 
-func matchPath(routePath, requestPath string, matchtype matchType) (map[string]string, bool) {
+func matchPath(routePath, requestPath string, matchtype matchType) (params map[string]string, matched bool) {
 	if !strings.HasPrefix(routePath, "/") {
 		routePath = "/" + routePath
 	}
@@ -66,11 +67,14 @@ func matchPath(routePath, requestPath string, matchtype matchType) (map[string]s
 		reg = genMatchPathReg(routePath)
 	}
 
+	params = make(map[string]string)
+	matched = false
+
 	switch matchtype {
 	case fullMatch:
 		if containsColon {
 			if len(strings.Split(routePath, "/")) != len(strings.Split(requestPath, "/")) {
-				return nil, false
+				return
 			}
 			paramsMap := make(map[string]string)
 			match := reg.FindStringSubmatch(requestPath)
@@ -82,14 +86,13 @@ func matchPath(routePath, requestPath string, matchtype matchType) (map[string]s
 			if len(match) > 0 {
 				return paramsMap, true
 			}
-			return nil, false
-		} else {
-			return nil, routePath == requestPath
+			return
 		}
+		return make(map[string]string), routePath == requestPath
 	case preMatch:
 		if containsColon {
 			if len(strings.Split(routePath, "/")) > len(strings.Split(requestPath, "/")) {
-				return nil, false
+				return
 			}
 
 			paramsMap := make(map[string]string)
@@ -103,12 +106,9 @@ func matchPath(routePath, requestPath string, matchtype matchType) (map[string]s
 			if len(match) > 0 {
 				return paramsMap, true
 			}
-			return nil, false
-		} else {
-			return nil, strings.HasPrefix(requestPath, routePath) && (len(requestPath) == len(routePath) || strings.HasPrefix(requestPath[len(routePath):], "/"))
+			return
 		}
-	default:
-		fmt.Errorf("matchtype must be one of fullMatch or preMatch")
+		return make(map[string]string), strings.HasPrefix(requestPath, routePath) && (len(requestPath) == len(routePath) || strings.HasPrefix(requestPath[len(routePath):], "/"))
 	}
-	return nil, false
+	return
 }

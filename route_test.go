@@ -9,16 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func exit() {
-	panic("")
-}
-
-func withexit() {
-	if e := recover(); e != "" {
-		panic(e)
-	}
-}
-
 func newTestServer(t *testing.T) (*Gor, *httptest.Server, *httpexpect.Expect, *assert.Assertions) {
 	handler := NewGor()
 	ts := httptest.NewServer(handler)
@@ -53,15 +43,8 @@ func TestMethod(t *testing.T) {
 	e.Request("TRACE", "/").Expect().Status(http.StatusOK).Text().Equal("TRACE")
 }
 
-func renderParamQuery(req *Req, res *Res) {
-	res.JSON(map[string]interface{}{
-		"params": req.Params,
-		"query":  req.Query,
-	})
-}
-
 func TestRoute_fullmatch(t *testing.T) {
-	app, ts, _, as := newTestServer(t)
+	app, ts, e, as := newTestServer(t)
 	defer ts.Close()
 
 	// `/` `/2` `/3/3`
@@ -78,13 +61,13 @@ func TestRoute_fullmatch(t *testing.T) {
 	assertBetweenRoute(as, app.routes[1], matchRouter("GET", "/2", app.routes)[0])
 	assertBetweenRoute(as, app.routes[2], matchRouter("GET", "/3/3", app.routes)[0])
 
-	//e.GET("/?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/2?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/3/3?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/2?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/3/3?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
 }
 
 func TestRoute_fullmatch_params(t *testing.T) {
-	app, ts, _, as := newTestServer(t)
+	app, ts, e, as := newTestServer(t)
 	defer ts.Close()
 
 	// `/:user` `/1/:user` `/2/:user/not-param/:name`
@@ -101,14 +84,18 @@ func TestRoute_fullmatch_params(t *testing.T) {
 	assertBetweenRoute(as, app.routes[1], matchRouter("GET", "/user", app.routes)[0])
 	assertBetweenRoute(as, app.routes[2], matchRouter("GET", "/2/user/not-param/name", app.routes)[0])
 
-	//e.GET("/1/user?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"user": "user"}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/user?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"user": "user"}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/2/user/not-param/name?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"user": "user", "name": "name"}, "query": map[string][]string{"a": {"b"}}})
+	as.Equal(app.routes[0].routePathReg.String(), "/1/(?P<user>.*)")
+	as.Equal(app.routes[1].routePathReg.String(), "/(?P<user>.*)")
+	as.Equal(app.routes[2].routePathReg.String(), "/2/(?P<user>.*)/not-param/(?P<name>.*)")
+
+	e.GET("/1/user?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"user": "user"}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/user?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"user": "user"}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/2/user/not-param/name?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"user": "user", "name": "name"}, "query": map[string][]string{"a": {"b"}}})
 }
 
 func TestRoute_prematch(t *testing.T) {
 	// only app use
-	app, ts, _, as := newTestServer(t)
+	app, ts, e, as := newTestServer(t)
 	defer ts.Close()
 
 	app.Use("/1", func(req *Req, res *Res) { renderParamQuery(req, res) })
@@ -121,14 +108,14 @@ func TestRoute_prematch(t *testing.T) {
 	assertBetweenRoute(as, app.routes[0], matchRouter("ALL", "/1", app.routes)[0])
 	assertBetweenRoute(as, app.routes[1], matchRouter("ALL", "/2", app.routes)[0])
 
-	//e.GET("/1?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/1/2/3?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/2?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/2/2/3?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/1?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/1/2/3?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/2?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/2/2/3?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
 }
 func TestRoute_prematch_use(t *testing.T) {
 	// app use and router
-	app, ts, _, as := newTestServer(t)
+	app, ts, e, as := newTestServer(t)
 	defer ts.Close()
 	router := NewRouter()
 
@@ -152,14 +139,14 @@ func TestRoute_prematch_use(t *testing.T) {
 	assertOneRoute(as, "GET", "/main/1", fullMatch, handlerFunc, matchRouter("GET", "/main/1", app.routes))
 	assertOneRoute(as, "GET", "/main/2", fullMatch, handlerFunc, matchRouter("GET", "/main/2", app.routes))
 
-	//e.GET("/no-sub?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/main/1?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/main/2?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/no-sub?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/main/1?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/main/2?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{}, "query": map[string][]string{"a": {"b"}}})
 }
 
 func TestRoute_prematch_use_params(t *testing.T) {
 	// app use and router + params
-	app, ts, _, as := newTestServer(t)
+	app, ts, e, as := newTestServer(t)
 	defer ts.Close()
 	router := NewRouter()
 
@@ -183,7 +170,12 @@ func TestRoute_prematch_use_params(t *testing.T) {
 	assertOneRoute(as, "GET", "/main/1/:name1", fullMatch, handlerFunc, matchRouter("GET", "/main/1/name1", app.routes))
 	assertOneRoute(as, "GET", "/main/2/:name2", fullMatch, handlerFunc, matchRouter("GET", "/main/2/name2", app.routes))
 
-	//e.GET("/no-sub/name0?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"name0": "name0"}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/main/1/name1?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"name1": "name1"}, "query": map[string][]string{"a": {"b"}}})
-	//e.GET("/main/2/name2?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"name2": "name2"}, "query": map[string][]string{"a": {"b"}}})
+	as.Equal(app.routes[0].routePathReg.String(), "/no-sub/(?P<name0>.*)")
+	as.Nil(app.routes[1].routePathReg)
+	as.Equal(app.routes[1].children[0].routePathReg.String(), "/main/1/(?P<name1>.*)")
+	as.Equal(app.routes[1].children[1].routePathReg.String(), "/main/2/(?P<name2>.*)")
+
+	e.GET("/no-sub/name0?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"name0": "name0"}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/main/1/name1?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"name1": "name1"}, "query": map[string][]string{"a": {"b"}}})
+	e.GET("/main/2/name2?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"name2": "name2"}, "query": map[string][]string{"a": {"b"}}})
 }

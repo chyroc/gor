@@ -11,19 +11,19 @@ func TestMatchReg(t *testing.T) {
 	{
 		var noRegMatch = func(matchType matchType) {
 			params, matched := matchPath("/a", "/a", matchType)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.True(matched)
 
 			params, matched = matchPath("/a/", "/a/", matchType)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.True(matched)
 
 			params, matched = matchPath("/a", "/a/", matchType)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.True(matched)
 
 			params, matched = matchPath("/a/", "/a", matchType)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.True(matched)
 		}
 		{
@@ -34,26 +34,26 @@ func TestMatchReg(t *testing.T) {
 			noRegMatch(preMatch)
 
 			params, matched := matchPath("/", "/a", preMatch)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.True(matched)
 
 			params, matched = matchPath("/a/", "/a/b/c", preMatch)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.True(matched)
 
 			params, matched = matchPath("/a/b", "/a/b/c", preMatch)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.True(matched)
 
 			params, matched = matchPath("/a", "/", preMatch)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.False(matched)
 		}
 	}
 	{
 		var realRegMatch = func(matchtype matchType) {
 			params, matched := matchPath("/:aname", "/", matchtype)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.False(matched)
 
 			params, matched = matchPath("/:aname", "/a", matchtype)
@@ -73,7 +73,7 @@ func TestMatchReg(t *testing.T) {
 			as.True(matched)
 
 			params, matched = matchPath("/:user/no-param/:name", "/a/oh-no/b", matchtype)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.False(matched)
 		}
 		{
@@ -81,7 +81,7 @@ func TestMatchReg(t *testing.T) {
 			realRegMatch(fullMatch)
 
 			params, matched := matchPath("/:aname", "/a/b", fullMatch)
-			as.Nil(params)
+			as.Equal(params, map[string]string{})
 			as.False(matched)
 		}
 		{

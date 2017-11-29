@@ -13,6 +13,13 @@ const (
 	midFunc
 )
 
+func renderParamQuery(req *Req, res *Res) {
+	res.JSON(map[string]interface{}{
+		"params": req.Params,
+		"query":  req.Query,
+	})
+}
+
 func assertBetweenRoute(as *assert.Assertions, expected, actual *route) {
 	assertRoute(as, expected.method, expected.routePath, expected.matchType, unkonwFunc, actual)
 	if expected.handlerFunc == nil {

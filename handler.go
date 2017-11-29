@@ -5,12 +5,6 @@ import (
 	"strings"
 )
 
-type matchedRouteIndex struct {
-	index    int
-	params   map[string]string
-	children []*matchedRouteIndex
-}
-
 type matchedRouteArray []*route
 
 func recursionMatch(method, requestPath, prePath string, parentRoutes []*route, matchedRoutes *matchedRouteArray) {
@@ -24,12 +18,9 @@ func recursionMatch(method, requestPath, prePath string, parentRoutes []*route, 
 		if route.method != "ALL" && route.method != method {
 			continue
 		}
-		params, matched := matchPath(route.routePath, requestPath, route.matchType)
+		_, matched := matchPath(route.routePath, requestPath, route.matchType)
 
 		if matched {
-			if params == nil {
-				params = make(map[string]string)
-			}
 			if len(route.children) > 0 {
 				subrequestPath := strings.Join(strings.Split(requestPath, "/")[2:], "/")
 				recursionMatch(method, subrequestPath, prePath+route.routePath, route.children, matchedRoutes)
@@ -51,13 +42,14 @@ func matchRouter(method string, requestPath string, routes []*route) []*route {
 	return matchedRoutes
 }
 
-func doHandler(req *Req, res *Res, index int, matchRoutes []*route) {
+func doHandler(req *Req, res *Res, index int, matchRoutes []*route, requestPath string) {
 	for i, j := index, len(matchRoutes); i < j; i++ {
 		if res.exit {
 			return
 		}
 
 		route := matchRoutes[i]
+		req.Params, _ = matchPath(route.routePath, requestPath, route.matchType)
 
 		if route.handlerFunc != nil {
 			route.handlerFunc(req, res)
@@ -65,7 +57,7 @@ func doHandler(req *Req, res *Res, index int, matchRoutes []*route) {
 			noCallNext := true
 			route.handlerFuncNext(req, res, func() {
 				noCallNext = false
-				doHandler(req, res, index+1, matchRoutes)
+				doHandler(req, res, index+1, matchRoutes, requestPath)
 			})
 			if noCallNext {
 				res.exit = true
@@ -89,7 +81,7 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestPath := strings.Split(r.URL.Path, "?")[0]
 	matchedRoutes := matchRouter(r.Method, requestPath, g.routes)
 
-	doHandler(req, res, 0, matchedRoutes)
+	doHandler(req, res, 0, matchedRoutes, requestPath)
 
 	res.SendStatus(http.StatusNotFound)
 }
