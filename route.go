@@ -22,7 +22,7 @@ type HandlerFuncNext func(*Req, *Res, Next)
 type matchType int
 
 const (
-	preMatch  matchType = iota
+	preMatch matchType = iota
 	fullMatch
 )
 
@@ -210,9 +210,8 @@ func (r *Route) useWithOne(pattern string, h interface{}) {
 	case reflect.Struct:
 		err = fmt.Errorf("maybe you are transmiting gor.Middleware, but please use Pointer, not Struct")
 	case reflect.Ptr:
-		// 添加子节点
 		if f, ok := h.(Middleware); ok {
-			r.useWithMiddleware("ALL", pattern, preMatch, Middleware(f))
+			r.useWithMiddleware("ALL", pattern, preMatch, f)
 		} else {
 			err = fmt.Errorf("cannot convert to gor.Middleware")
 		}

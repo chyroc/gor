@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/Chyroc/gor"
-	"fmt"
 )
 
 func Logger(req *gor.Req, res *gor.Res, next gor.Next) {

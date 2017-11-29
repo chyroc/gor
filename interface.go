@@ -45,7 +45,7 @@ type Middleware interface {
 
 // RouteInterface define Route Interface
 type RouteInterface interface {
-	Use(...interface {})
+	Use(...interface{})
 	//UseN(pattern string, m Middleware)
 
 	normalMethod

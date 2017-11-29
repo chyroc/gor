@@ -2,8 +2,8 @@ package gor
 
 import (
 	"log"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 // Gor gor framework core struct
