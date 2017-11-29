@@ -35,12 +35,9 @@ type route struct {
 	method    string
 	routePath string
 	matchType matchType
-	//prepath     string
 
-	//routeParams  []*routeParam
 	routePathReg *regexp.Regexp
 
-	//parentIndex string
 	handlerFunc     HandlerFunc
 	handlerFuncNext HandlerFuncNext
 	middleware      Middleware
@@ -48,17 +45,11 @@ type route struct {
 	children []*route
 }
 
-type matchedRoute struct {
-	index  int
-	params map[string]string
-}
-
 func (r *route) copy() *route {
-	var t = &route{
+	return &route{
 		method:    r.method,
 		routePath: r.routePath,
 		matchType: r.matchType,
-		//prepath:   r.prepath,
 
 		routePathReg: r.routePathReg,
 
@@ -68,15 +59,11 @@ func (r *route) copy() *route {
 
 		children: copyRouteSlice(r.children),
 	}
-	//var rs []*routeParam
-	//for _, v := range r.routeParams {
-	//	rs = append(rs, &routeParam{
-	//		name:    v.name,
-	//		isParam: v.isParam,
-	//	})
-	//}
-	//t.routeParams = rs
-	return t
+}
+
+type matchedRoute struct {
+	index  int
+	params map[string]string
 }
 
 func copyRouteSlice(routes []*route) []*route {
@@ -131,16 +118,6 @@ func (r *Route) addHandlerFuncAndNextRoute(method string, pattern string, matchT
 
 	routePath := URL.Path
 
-	//var rps []*routeParam
-	//for _, i := range paths {
-	//	if strings.HasPrefix(i, ":") {
-	//		//parentrouteParams = append(parentrouteParams, &routeParam{name: i[1:], isParam: true})
-	//		parentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: i[1:], isParam: true})
-	//	} else {
-	//		//parentrouteParams = append(parentrouteParams, &routeParam{name: i, isParam: false})
-	//		parentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: i, isParam: false})
-	//	}
-	//}
 	var routeH = &route{
 		method:    method,
 		routePath: routePath,
@@ -274,11 +251,7 @@ func (r *Route) useWithOne(pattern string, h interface{}) {
 }
 
 func (r *Route) handler(pattern string) []*route {
-	a:=copyRouteSlice(r.routes)
-	//fmt.Printf("\naaaaaa %s\n",a[0])
-	//fmt.Printf("\naaaaaa %s\n",a[1])
-	return a
-	//return r.routes
+	return copyRouteSlice(r.routes)
 }
 
 func (r *Route) useWithHandlerFunc(method, pattern string, matchType matchType, h HandlerFunc, parentrouteParams []*routeParam) {
@@ -301,56 +274,12 @@ func (r *Route) useWithMiddleware(method, pattern string, matchType matchType, m
 		method:    method,
 		matchType: matchType,
 		routePath: pattern,
-		//routeParams: nil, // todo
-
-		//prepath:     pattern[1:],
 
 		routePathReg: genMatchPathReg(pattern),
 
 		children: subRoutes,
 	}
 	r.routes = append(r.routes, parent)
-	//for _, subRoute := range subRoutes {
-	//	fmt.Printf("subRoute %s\n", subRoute)
-	//	var newParentrouteParams []*routeParam
-	//	if subRoute.prepath != "" {
-	//		fmt.Printf("1\n")
-	//		if strings.HasPrefix(subRoute.prepath, ":") {
-	//			fmt.Printf("2\n")
-	//			newParentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: subRoute.prepath[1:], isParam: true})
-	//		} else {
-	//			fmt.Printf("3\n")
-	//			newParentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: subRoute.prepath, isParam: false})
-	//		}
-	//		fmt.Printf("4\n")
-	//	}
-	//	fmt.Printf("5\n")
-	//	newParentrouteParams = mergeRouteParamSlice(newParentrouteParams, subRoute.routeParams...)
-	//	if subRoute.handlerFunc != nil {
-	//		fmt.Printf("6\n")
-	//		r.routes = append(r.routes, &route{
-	//			handlerFunc: subRoute.handlerFunc,
-	//			method:      subRoute.method,
-	//			prepath:     pattern[1:],
-	//			routeParams: newParentrouteParams,
-	//		})
-	//	} else if subRoute.handlerFuncNext != nil {
-	//		fmt.Printf("7\n")
-	//		fmt.Printf("6\n")
-	//		r.routes = append(r.routes, &route{
-	//			handlerFuncNext: subRoute.handlerFuncNext,
-	//			method:          subRoute.method,
-	//			prepath:         pattern[1:],
-	//			routeParams:     newParentrouteParams,
-	//		})
-	//	} else if subRoute.middleware != nil {
-	//		fmt.Printf("8\n")
-	//		r.useWithMiddleware(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.middleware, newParentrouteParams)
-	//	} else {
-	//		fmt.Printf("9\n")
-	//		panic("notklsadjlfajs")
-	//	}
-	//}
 }
 
 //

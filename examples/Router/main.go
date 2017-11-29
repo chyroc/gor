@@ -14,9 +14,6 @@ func Logger(req *gor.Req, res *gor.Res, next gor.Next) {
 	next()
 
 	fmt.Printf("========================")
-
-	//startTime := req.GetContext("time").(time.Time)
-	//log.Printf("startTime %+v , endTime %+v\n", startTime.UTC(), time.Now().UTC())
 }
 
 func main() {
