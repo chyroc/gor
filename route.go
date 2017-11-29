@@ -22,7 +22,7 @@ type HandlerFuncNext func(*Req, *Res, Next)
 type matchType int
 
 const (
-	preMatch  matchType = iota
+	preMatch matchType = iota
 	fullMatch
 )
 
