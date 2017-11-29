@@ -6,107 +6,98 @@ import (
 	"fmt"
 )
 
-func matchRouter(method string, paths []string, routes []*route) []*matchedRoute {
-	debugPrintf("routes len %s", len(routes))
-	for k, v := range routes {
-		debugPrintf("route[%d] %+v", k, v)
-		for k2, v2 := range v.routeParams {
-			debugPrintf("routeParams[%d] %+v", k2, v2)
+type matchedRouteIndex struct {
+	index    int
+	params   map[string]string
+	children []*matchedRouteIndex
+}
+
+func nextMatchedRouteIndex(index int, matchedRouteIndex []*matchedRouteIndex) (int) {
+	var matchIndex []int
+	var next = func() {
+		for k, v := range matchedRouteIndex {
+			if len(v.children) > 0 {
+				nextMatchedRouteIndex(index,v.children)
+			}
 		}
-		debugPrintf("=====")
 	}
 
-	for _, v := range paths {
-		if strings.Contains(v, "/") {
-			panic("paths cannot contain /")
-		}
-	}
+}
 
-	var matchedRoutes []*matchedRoute
+func matchRouter(method string, requestPath string, routes []*route) []*matchedRouteIndex {
+	var matchedRoutes []*matchedRouteIndex
+	//fmt.Printf("___1____\n")
 	for matchIndex, route := range routes {
-		if route.prepath == paths[0] || route.prepath == "*" {
-			fmt.Printf("route.routeParams paths", route.routeParams, paths)
-			if route.method != "ALL" && route.method != method {
-				continue
-			}
-			matchRoutes := paths[1:]
-			if len(matchRoutes) != len(route.routeParams) && route.prepath != "*"{
-				continue
-			}
-			fmt.Printf("--1\n")
-			fmt.Printf("route.routeParams matchRoutes", route.routeParams, matchRoutes)
-			if len(route.routeParams) == 0 && len(matchRoutes) == 0 {
-				fmt.Printf("--2\n")
-				matchedRoutes = append(matchedRoutes, &matchedRoute{index: matchIndex})
-				continue
-			}
-			fmt.Printf("--3\n")
-
-			match := false
-			matchParams := make(map[string]string)
-			for i, j := 0, len(matchRoutes); i < j; i++ {
-				fmt.Printf("--4\n")
-				if route.routeParams[i].isParam {
-					fmt.Printf("--5\n")
-					matchParams[route.routeParams[i].name] = matchRoutes[i]
-				} else if route.routeParams[i].name != matchRoutes[i] {
-					fmt.Printf("--6\n")
-					match = false
-					break
-				}
-				fmt.Printf("--7\n")
-				match = true
-			}
-			fmt.Printf("--8\n")
-			if match {
-				fmt.Printf("--9\n")
-				matchedRoutes = append(matchedRoutes, &matchedRoute{index: matchIndex, params: matchParams})
-				continue
-			}
-			fmt.Printf("--10\n")
+		//fmt.Printf("____2___\n")
+		//fmt.Printf("_______method , route.method ,\n", route.method, method, route.method != "ALL" && route.method != method)
+		if route.method != "ALL" && route.method != method {
+			continue
 		}
+		//fmt.Printf("___3____\n")
+
+		if !strings.HasPrefix(requestPath, "/") {
+			requestPath = "/" + requestPath
+		}
+		//fmt.Printf("____ route.routePath, requestPath, route.matchType\n\n", route.routePath, requestPath, route.matchType)
+		params, matched := matchPath(route.routePath, requestPath, route.matchType)
+
+		if matched {
+			//fmt.Printf("___4____\n")
+			if params == nil {
+				params = make(map[string]string)
+			}
+			//fmt.Printf("____5___\n")
+			matchedRouteIndex := &matchedRouteIndex{index: matchIndex, params: params}
+			if len(route.children) > 0 {
+				//fmt.Printf("____6___\n")
+				requestPaths := strings.Split(requestPath, "/")
+				if len(requestPaths) > 1 {
+					//fmt.Printf("___7____\n")
+					subrequestPath := strings.Join(strings.Split(requestPath, "/")[2:], "/")
+					//fmt.Printf("==1 route.method, subrequestPath, route.children \n\n", route.method, subrequestPath, route.children)
+					//fmt.Printf("\nroute.children %s\n", route.children)
+					matchedRouteIndex.children = matchRouter(method, subrequestPath, route.children)
+					//fmt.Printf("matchedRouteIndex.children %s\n", matchedRouteIndex.children)
+				} else {
+					//fmt.Printf("___8____\n")
+					matchedRouteIndex.children = matchRouter(route.method, "/", route.children)
+				}
+			}
+			//fmt.Printf("___9____\n")
+			matchedRoutes = append(matchedRoutes, matchedRouteIndex)
+		}
+		//fmt.Printf("____10___\n")
 	}
+	//fmt.Printf("____11___\n")
 
 	return matchedRoutes
 }
 
-func (g *Gor) doHandler(req *Req, res *Res, routeIndex int, matchedRoutes []*matchedRoute) bool {
-	matchedRoute := matchedRoutes[routeIndex]
-	//canNext = false
-	//debugPrintf("res exit %s", res.exit)
+func doHandler(req *Req, res *Res, matchedRouteIndex *matchedRouteIndex, routes []*route) bool {
+	//routeIndex := matchedRoutes[routeIndex]
 	if res.exit {
 		return true
 	}
-	//if !isFirst || canNext {
-	//	return
-	//}
-	//debugPrintf("matchedRoute[%d] %+v", routeIndex, matchedRoute)
-	route := g.routes[matchedRoute.index]
-	matchParams := matchedRoute.params
-	//debugPrintf("route %+v \nmatchParams %+v", route, matchParams)
-	for k, v := range matchParams {
-		req.Params[k] = v
-	}
-	if route.handlerFunc != nil {
-		route.handlerFunc(req, res)
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("r %s\n", r)
+			fmt.Printf("routes[matchedRouteIndex.index] %s %s %s\n", routes, len(routes), matchedRouteIndex.index)
+		}
+	}()
+	matchedRoute := routes[matchedRouteIndex.index]
+	if matchedRoute.handlerFunc != nil {
+		matchedRoute.handlerFunc(req, res)
 		return true
-	} else if route.handlerFuncNext != nil {
-		//canNext := false
-		fmt.Printf("1-----\n")
-		route.handlerFuncNext(req, res, func() {
-			fmt.Printf("2-----\n")
-			for i, _ := range matchedRoutes[routeIndex+1:] {
-				fmt.Printf("3-----\n")
-				g.doHandler(req, res, i, matchedRoutes)
-				fmt.Printf("4-----\n")
+	} else if matchedRoute.handlerFuncNext != nil {
+		matchedRoute.handlerFuncNext(req, res, func() {
+			for i, _ := range routes[matchedRouteIndex.index+1:] {
+				doHandler(req, res, i, matchedRoutes, routes)
 			}
-			fmt.Printf("5-----\n")
-			//canNext = true
 		})
-		fmt.Printf("6-----\n")
 		return true
 	} else {
-		panic("get uhdkshfhksdh")
+		//fmt.Printf("=-=-=-=-=-=-=-=-==-\n", matchedRoute.children)
+		return false
 	}
 }
 
@@ -119,17 +110,36 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	routes := strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
-	matchedRoutes := matchRouter(r.Method, routes, g.routes)
-	debugPrintf("g.routes len %d %s", len(g.routes), g.routes)
-	//debugPrintf("matchedRoutes len %d %s", len(matchedRoutes), matchedRoutes)
-	//canNext := true
-	//isFirst := true
-	for i, _ := range matchedRoutes {
-		g.doHandler(req, res, i, matchedRoutes)
+	//fmt.Printf("%s\n", g.routes)
+	//fmt.Printf("%s\n", g.routes[1].children)
+	matchedRoutes := matchRouter(r.Method, strings.Split(r.URL.Path, "?")[0], g.routes)
+	//fmt.Printf("matchedRoutes len %d\n", len(matchedRoutes))
+	//fmt.Printf("~~~~~~~1~~~~~~\n")
+	for _, v := range matchedRoutes {
+		//fmt.Printf("~~~~~~~2~~~~~~\n")
+		//fmt.Printf("matchedRoutes v %s\n", v)
+		req.Params = v.params
+		//fmt.Printf("routes length %d \n", len(g.routes))
+
+		doHandler(req, res, v, g.routes)
+		//fmt.Printf("~~~~~~~g.doHandler(req, res, i, matchedRoutes)~~~~~~\n", g.doHandler, req, res, i, matchedRoutes)
+
+		//fmt.Printf("v.children len %d\n", len(v.children))
+		//fmt.Printf("~~~~~~~3~~~~~~\n")
+		for _, v2 := range v.children {
+			//fmt.Printf("~~~~~~~4~~~~~~\n")
+			req.Params = v2.params
+			//fmt.Printf("routes length %d \n", len(g.routes[v.index].children))
+			doHandler(req, res, v2, g.routes[v.index].children)
+			//fmt.Printf("~~~~~~~g.doHandler(req, res, i2, matchedRoutes)~~~~~~\n", g.doHandler, req, res, i2, v.children)
+			//fmt.Printf("~~~~~~5~~~~~~~\n")
+		}
+		//fmt.Printf("~~~~~~~6~~~~~~\n")
 	}
+	//fmt.Printf("~~~~~~~7~~~~~~\n")
 
 	res.SendStatus(http.StatusNotFound)
+	//fmt.Printf("~~~~~~~8~~~~~~\n")
 }
 
 // Listen bind port and start server
