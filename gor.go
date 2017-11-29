@@ -1,7 +1,6 @@
 package gor
 
 import (
-	"log"
 	"regexp"
 	"strings"
 )
@@ -18,17 +17,7 @@ func NewGor() *Gor {
 	}
 }
 
-var debug = false
-
-func debugPrintf(format string, a ...interface{}) {
-	if debug {
-		log.Printf(format+"\n", a...)
-	}
-}
-
 func genMatchPathReg(routePath string) *regexp.Regexp {
-	debugPrintf(routePath)
-
 	if strings.HasSuffix(routePath, "/") {
 		routePath = routePath[:len(routePath)-1]
 	}
