@@ -22,7 +22,7 @@ type HandlerFuncNext func(*Req, *Res, Next)
 type matchType int
 
 const (
-	preMatch matchType = iota
+	preMatch  matchType = iota
 	fullMatch
 )
 
@@ -256,49 +256,3 @@ func (r *Route) useWithMiddleware(method, pattern string, matchType matchType, m
 	}
 	r.routes = append(r.routes, parent)
 }
-
-//
-//func (r *Route) useWithMiddleware(method, pattern string, mid Middleware, parentrouteParams []*routeParam) {
-//	subRoutes := mid.handler(pattern)
-//	for _, subRoute := range subRoutes {
-//		fmt.Printf("subRoute %s\n", subRoute)
-//		var newParentrouteParams []*routeParam
-//		if subRoute.prepath != "" {
-//			fmt.Printf("1\n")
-//			if strings.HasPrefix(subRoute.prepath, ":") {
-//				fmt.Printf("2\n")
-//				newParentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: subRoute.prepath[1:], isParam: true})
-//			} else {
-//				fmt.Printf("3\n")
-//				newParentrouteParams = mergeRouteParamSlice(parentrouteParams, &routeParam{name: subRoute.prepath, isParam: false})
-//			}
-//			fmt.Printf("4\n")
-//		}
-//		fmt.Printf("5\n")
-//		newParentrouteParams = mergeRouteParamSlice(newParentrouteParams, subRoute.routeParams...)
-//		if subRoute.handlerFunc != nil {
-//			fmt.Printf("6\n")
-//			r.routes = append(r.routes, &route{
-//				handlerFunc: subRoute.handlerFunc,
-//				method:      subRoute.method,
-//				prepath:     pattern[1:],
-//				routeParams: newParentrouteParams,
-//			})
-//		} else if subRoute.handlerFuncNext != nil {
-//			fmt.Printf("7\n")
-//			fmt.Printf("6\n")
-//			r.routes = append(r.routes, &route{
-//				handlerFuncNext: subRoute.handlerFuncNext,
-//				method:          subRoute.method,
-//				prepath:         pattern[1:],
-//				routeParams:     newParentrouteParams,
-//			})
-//		} else if subRoute.middleware != nil {
-//			fmt.Printf("8\n")
-//			r.useWithMiddleware(subRoute.method, pattern+"/"+subRoute.prepath, subRoute.middleware, newParentrouteParams)
-//		} else {
-//			fmt.Printf("9\n")
-//			panic("notklsadjlfajs")
-//		}
-//	}
-//}
