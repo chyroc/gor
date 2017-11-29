@@ -9,6 +9,71 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type handlerType int
+
+const (
+	unkonwFunc handlerType = iota
+	handlerFunc
+	handlerFuncNext
+	midFunc
+)
+
+func renderParamQuery(req *Req, res *Res) {
+	res.JSON(map[string]interface{}{
+		"params": req.Params,
+		"query":  req.Query,
+	})
+}
+
+func assertBetweenRoute(as *assert.Assertions, expected, actual *route) {
+	assertRoute(as, expected.method, expected.routePath, expected.matchType, unkonwFunc, actual)
+	if expected.handlerFunc == nil {
+		as.Nil(actual.handlerFunc)
+	} else {
+		as.NotNil(actual.handlerFunc)
+	}
+
+	if expected.handlerFuncNext == nil {
+		as.Nil(actual.handlerFuncNext)
+	} else {
+		as.NotNil(actual.handlerFuncNext)
+	}
+
+	if expected.middleware == nil {
+		as.Nil(actual.middleware)
+	} else {
+		as.NotNil(actual.middleware)
+	}
+}
+
+func assertOneRoute(as *assert.Assertions, method, routePath string, matchType matchType, handlerType handlerType, actuals []*route) {
+	as.Len(actuals, 1)
+	assertRoute(as, method, routePath, matchType, handlerType, actuals[0])
+}
+
+func assertRoute(as *assert.Assertions, method, routePath string, matchType matchType, handlerType handlerType, actual *route) {
+	if method != "ALL" {
+		as.Equal(method, actual.method)
+	}
+	as.Equal(routePath, actual.routePath)
+	as.Equal(matchType, actual.matchType)
+
+	switch handlerType {
+	case handlerFunc:
+		as.NotNil(actual.handlerFunc)
+		as.Nil(actual.handlerFuncNext)
+		as.Nil(actual.middleware)
+	case handlerFuncNext:
+		as.Nil(actual.handlerFunc)
+		as.NotNil(actual.handlerFuncNext)
+		as.Nil(actual.middleware)
+	case midFunc:
+		as.Nil(actual.handlerFunc)
+		as.Nil(actual.handlerFuncNext)
+		as.NotNil(actual.middleware)
+	}
+}
+
 func newTestServer(t *testing.T) (*Gor, *httptest.Server, *httpexpect.Expect, *assert.Assertions) {
 	handler := NewGor()
 	ts := httptest.NewServer(handler)
@@ -178,4 +243,17 @@ func TestRoute_prematch_use_params(t *testing.T) {
 	e.GET("/no-sub/name0?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"name0": "name0"}, "query": map[string][]string{"a": {"b"}}})
 	e.GET("/main/1/name1?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"name1": "name1"}, "query": map[string][]string{"a": {"b"}}})
 	e.GET("/main/2/name2?a=b").Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"params": map[string]string{"name2": "name2"}, "query": map[string][]string{"a": {"b"}}})
+}
+
+func TestRoute_function_next_mutil_errors(t *testing.T) {
+	app, ts, e, as := newTestServer(t)
+	defer ts.Close()
+	as.Nil(nil)
+	app.Use("/0", func(req *Req, res *Res, next Next) { next(); res.Send("x") })
+	app.Use("/1", func(req *Req, res *Res, next Next) { next("1") })
+	app.Use("/2", func(req *Req, res *Res, next Next) { next("1", "2") })
+
+	e.GET("/0").Expect().Status(http.StatusOK)
+	e.GET("/1").Expect().Status(http.StatusInternalServerError).Text().Equal("1")
+	e.GET("/2").Expect().Status(http.StatusInternalServerError).Text().Equal("1, 2")
 }
