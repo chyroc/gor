@@ -9,27 +9,29 @@ import (
 )
 
 func Logger(req *gor.Req, res *gor.Res, next gor.Next) {
-	req.AddContext("time", time.Now())
-
+	startTime := time.Now()
 	next()
+	fmt.Printf("[LOG] method: %s, time: %s, response %s\n", req.Method, time.Now().Sub(startTime), res.Response)
+}
 
-	fmt.Printf("========================")
+func Print(req *gor.Req, res *gor.Res, next gor.Next) {
+	fmt.Printf("before\n")
+	next()
+	fmt.Printf("after\n")
 }
 
 func main() {
 	app := gor.NewGor()
 	router := gor.NewRouter()
 
-	router.Get("/sub/:uu", func(req *gor.Req, res *gor.Res) {
-		time.Sleep(time.Microsecond * 100)
-		res.JSON(map[string]interface{}{
-			"query":  req.Query,
-			"params": req.Params,
-		})
-	})
 	app.Use(Logger)
+	app.Use(Print)
+	router.Get("/sub", func(req *gor.Req, res *gor.Res) {
+		fmt.Printf("content... \n")
+		res.Send("this is data.")
+	})
 
-	app.Use("/m", router)
+	app.Use("/main", router)
 
 	log.Fatal(app.Listen(":3000"))
 }
