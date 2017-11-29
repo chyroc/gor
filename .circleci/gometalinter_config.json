@@ -14,7 +14,6 @@
     "maligned",
     "megacheck",
     "misspell",
-    "nakedret",
     "safesql",
     "structcheck",
     "unconvert",
@@ -31,3 +30,4 @@
 // lll
 // errcheck
 // dupl
+// nakedret

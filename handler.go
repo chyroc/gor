@@ -5,55 +5,68 @@ import (
 	"strings"
 )
 
-func matchRouter(method string, paths []string, routes []*route) (map[string]string, int) {
-	for k, v := range routes {
-		debugPrintf("route[%d] %+v", k, v)
-		for k2, v2 := range v.routeParams {
-			debugPrintf("routeParams[%d] %+v", k2, v2)
-		}
-		debugPrintf("=====")
+type matchedRouteArray []*route
+
+func recursionMatch(method, requestPath, prePath string, parentRoutes []*route, matchedRoutes *matchedRouteArray) {
+	if !strings.HasPrefix(requestPath, "/") {
+		requestPath = "/" + requestPath
 	}
-
-	for _, v := range paths {
-		if strings.Contains(v, "/") {
-			panic("paths cannot contain /")
-		}
+	if strings.HasSuffix(requestPath, "/") {
+		requestPath = requestPath[:len(requestPath)-1]
 	}
+	for _, route := range parentRoutes {
+		if route.method != "ALL" && route.method != method {
+			continue
+		}
+		_, matched := matchPath(route.routePath, requestPath, route.matchType)
 
-	matchIndex := -1
-	for _, route := range routes {
-		matchIndex++
-		if route.prepath == paths[0] {
-			if method != "ALL" && route.method != "ALL" && route.method != method {
-				continue
-			}
-			matchRoutes := paths[1:]
-			if len(matchRoutes) != len(route.routeParams) {
-				continue
-			}
-
-			if len(route.routeParams) == 0 && len(matchRoutes) == 0 {
-				return nil, matchIndex
-			}
-
-			match := false
-			matchParams := make(map[string]string)
-			for i, j := 0, len(matchRoutes); i < j; i++ {
-				if route.routeParams[i].isParam {
-					matchParams[route.routeParams[i].name] = matchRoutes[i]
-				} else if route.routeParams[i].name != matchRoutes[i] {
-					match = false
-					break
-				}
-				match = true
-			}
-			if match {
-				return matchParams, matchIndex
+		if matched {
+			if len(route.children) > 0 {
+				subrequestPath := strings.Join(strings.Split(requestPath, "/")[2:], "/")
+				recursionMatch(method, subrequestPath, prePath+route.routePath, route.children, matchedRoutes)
+			} else {
+				route2 := route.copy()
+				route2.routePath = prePath + route2.routePath
+				(*matchedRoutes) = append((*matchedRoutes), route2)
 			}
 		}
 	}
+}
 
-	return nil, -1
+func matchRouter(method string, requestPath string, routes []*route) []*route {
+	if strings.ContainsRune(requestPath, '?') {
+		requestPath = strings.Split(requestPath, "?")[0]
+	}
+	var matchedRoutes matchedRouteArray
+	recursionMatch(method, requestPath, "", routes, &matchedRoutes)
+	return matchedRoutes
+}
+
+func doHandler(req *Req, res *Res, index int, matchRoutes []*route, requestPath string) {
+	for i, j := index, len(matchRoutes); i < j; i++ {
+		if res.exit {
+			return
+		}
+
+		route := matchRoutes[i]
+		req.Params, _ = matchPath(route.routePath, requestPath, route.matchType)
+
+		if route.handlerFunc != nil {
+			route.handlerFunc(req, res)
+		} else if route.handlerFuncNext != nil {
+			noCallNext := true
+			route.handlerFuncNext(req, res, func() {
+				noCallNext = false
+				doHandler(req, res, index+1, matchRoutes, requestPath)
+			})
+			if noCallNext {
+				res.exit = true
+				return
+			}
+		} else {
+			panic("sdafafdasfasfasfas")
+		}
+	}
 }
 
 // ServeHTTP use to start server
@@ -65,22 +78,12 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	routes := strings.Split(strings.Split(r.URL.Path[1:], "?")[0], "/")
-	matchParams, matchIndex := matchRouter(r.Method, routes, g.routes)
-	if matchIndex != -1 {
-		for k, v := range matchParams {
-			req.Params[k] = v
-		}
-		g.routes[matchIndex].handler(req, res)
-		return
-	}
+	requestPath := strings.Split(r.URL.Path, "?")[0]
+	matchedRoutes := matchRouter(r.Method, requestPath, g.routes)
+
+	doHandler(req, res, 0, matchedRoutes, requestPath)
 
 	res.SendStatus(http.StatusNotFound)
-}
-
-// Use add middlewares
-func (g *Gor) Use(middlewares ...func(g *Gor) http.Handler) {
-	//g.middlewares = append(g.middlewares, middlewares...)
 }
 
 // Listen bind port and start server

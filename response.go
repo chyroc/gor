@@ -9,34 +9,40 @@ import (
 
 // Res is http ResponseWriter and some gor Response method
 type Res struct {
-	http.ResponseWriter
+	w    http.ResponseWriter
 	exit bool
+
+	Response   interface{}
+	statusCode int
 }
 
 func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) *Res {
 	return &Res{
 		httpResponseWriter,
 		false,
+		nil,
+		200,
 	}
 }
 
-func (res *Res) errResponseTypeUnsupported(vtype string, v interface{}) {
-	http.Error(res, fmt.Sprintf("[%s] [%s] %+v", ErrResponseTypeUnsupported, vtype, v), http.StatusInternalServerError)
+func (res *Res) Write(data []byte) (int, error) {
+	res.exit = true
+	res.Response = string(data)
+	res.w.WriteHeader(res.statusCode)
+	return res.w.Write(data)
 }
 
-// Status set response http status code
+// Status set Response http status code
 func (res *Res) Status(code int) *Res {
+	res.statusCode = code
 	if http.StatusText(code) == "" {
-		http.Error(res, ErrHTTPStatusCodeInvalid.Error(), http.StatusInternalServerError)
-		res.exit = true
-	} else {
-		res.WriteHeader(code)
+		res.Status(http.StatusInternalServerError).Send(ErrHTTPStatusCodeInvalid)
 	}
 
 	return res
 }
 
-// SendStatus set response http status code with its text
+// SendStatus set Response http status code with its text
 func (res *Res) SendStatus(code int) {
 	if res.exit {
 		return
@@ -45,7 +51,7 @@ func (res *Res) SendStatus(code int) {
 	res.Status(code).Send(http.StatusText(code))
 }
 
-// Send Send a response
+// Send Send a Response
 func (res *Res) Send(v interface{}) {
 	if res.exit {
 		return
@@ -55,7 +61,7 @@ func (res *Res) Send(v interface{}) {
 	res.exit = true
 }
 
-// JSON Send json response
+// JSON Send json Response
 func (res *Res) JSON(v interface{}) {
 	defer func() {
 		res.exit = true
@@ -66,7 +72,7 @@ func (res *Res) JSON(v interface{}) {
 	}
 
 	if v == nil {
-		res.Header().Set("Content-Type", "application/json")
+		res.w.Header().Set("Content-Type", "application/json")
 		res.Write([]byte("null"))
 		return
 	}
@@ -76,31 +82,30 @@ func (res *Res) JSON(v interface{}) {
 	case reflect.Map, reflect.Struct, reflect.Slice, reflect.Array:
 		break
 	default:
-		res.errResponseTypeUnsupported(t.Kind().String(), v)
+		res.Status(http.StatusInternalServerError).Send(fmt.Sprintf("[%s] [%s] %+v", ErrResponseTypeUnsupported, t.Kind().String(), v))
 		return
 	}
 
 	b, err := json.Marshal(v)
 	if err != nil {
-		res.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(res, ErrJSONMarshal.Error())
+		res.Status(http.StatusInternalServerError).Send(ErrJSONMarshal)
 		return
 	}
 
-	res.Header().Set("Content-Type", "application/json")
+	res.w.Header().Set("Content-Type", "application/json")
 	res.Write(b)
 }
 
 // Redirect Redirect to another url
 func (res *Res) Redirect(path string) {
-	res.Header().Set("Location", path)
-	res.WriteHeader(http.StatusFound)
+	res.w.Header().Set("Location", path)
+	res.w.WriteHeader(http.StatusFound)
 	res.Write([]byte(fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)))
 }
 
 // AddHeader append (key, val) to headers
 func (res *Res) AddHeader(key, val string) {
-	res.Header().Add(key, val)
+	res.w.Header().Add(key, val)
 }
 
 // SetCookie set cookie
@@ -117,13 +122,12 @@ func (res *Res) SetCookie(key, val string, option ...Cookie) {
 		}
 	}
 
-	http.SetCookie(res, cookie)
+	http.SetCookie(res.w, cookie)
 }
 
-// Error send erroe response
+// Error send erroe Response
 func (res *Res) Error(v string) {
-	http.Error(res, v, http.StatusInternalServerError)
-	res.exit = true
+	res.Status(http.StatusInternalServerError).Send(v)
 }
 
 // End end the request

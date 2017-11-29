@@ -5,8 +5,25 @@ import (
 )
 
 type gorInterface interface {
-	normalMethod
 	http.Handler
+}
+
+type resInterface interface {
+	Write(data []byte) (int, error)
+	Status(code int) *Res
+	SendStatus(code int)
+	Send(v interface{})
+	JSON(v interface{})
+	Redirect(path string)
+	AddHeader(key, val string)
+	SetCookie(key, val string, option ...Cookie)
+	Error(v string)
+	End()
+}
+
+type reqInterface interface {
+	AddContext(key, val interface{})
+	GetContext(key interface{}) interface{}
 }
 
 type normalMethod interface {
@@ -21,14 +38,22 @@ type normalMethod interface {
 	Trace(pattern string, h HandlerFunc)
 }
 
+// Middleware mid
+type Middleware interface {
+	handler(pattern string) []*route
+}
+
 // RouteInterface define Route Interface
 type RouteInterface interface {
-	Use(h HandlerFunc)
-	UseN(pattern string, m Mid)
+	Use(...interface{})
+	//UseN(pattern string, m Middleware)
 
 	normalMethod
+	Middleware
 }
 
 var _ gorInterface = (*Gor)(nil)
-var _ normalMethod = (*Gor)(nil)
+var _ resInterface = (*Res)(nil)
+var _ reqInterface = (*Req)(nil)
+var _ RouteInterface = (*Gor)(nil)
 var _ RouteInterface = (*Route)(nil)

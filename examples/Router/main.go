@@ -3,31 +3,35 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
+	"time"
 
 	"github.com/Chyroc/gor"
 )
 
-func Logger(g *gor.Gor) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("logger")
-	}
+func Logger(req *gor.Req, res *gor.Res, next gor.Next) {
+	startTime := time.Now()
+	next()
+	fmt.Printf("[LOG] method: %s, time: %s, response %s\n", req.Method, time.Now().Sub(startTime), res.Response)
+}
 
-	return http.HandlerFunc(fn)
+func Print(req *gor.Req, res *gor.Res, next gor.Next) {
+	fmt.Printf("before\n")
+	next()
+	fmt.Printf("after\n")
 }
 
 func main() {
 	app := gor.NewGor()
 	router := gor.NewRouter()
 
-	router.Get("/sub/:uu", func(req *gor.Req, res *gor.Res) {
-		res.JSON(map[string]interface{}{
-			"query":  req.Query,
-			"params": req.Params,
-		})
+	app.Use(Logger)
+	app.Use(Print)
+	router.Get("/sub", func(req *gor.Req, res *gor.Res) {
+		fmt.Printf("content... \n")
+		res.Send("this is data.")
 	})
 
-	app.UseN("/user", router)
+	app.Use("/main", router)
 
 	log.Fatal(app.Listen(":3000"))
 }
