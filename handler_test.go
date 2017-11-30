@@ -1,6 +1,7 @@
 package gor
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,4 +107,18 @@ func TestMatchReg(t *testing.T) {
 			as.True(matched)
 		}
 	}
+}
+
+func TestStatic(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Static("./vendor")
+	e.GET("/static/").Expect().Status(http.StatusOK).Body().Equal("<pre>\n<a href=\"github.com/\">github.com/</a>\n<a href=\"golang.org/\">golang.org/</a>\n</pre>\n")
+	e.GET("/static/github.com/unrolled/render/LICENSE").Expect().Status(http.StatusOK).Body().Contains("The MIT License (MIT)")
+
+	app.SetStaticPath("/files")
+	e.GET("/static/").Expect().Status(http.StatusNotFound)
+	e.GET("/files/").Expect().Status(http.StatusOK).Body().Equal("<pre>\n<a href=\"github.com/\">github.com/</a>\n<a href=\"golang.org/\">golang.org/</a>\n</pre>\n")
+	e.GET("/files/github.com/unrolled/render/LICENSE").Expect().Status(http.StatusOK).Body().Contains("The MIT License (MIT)")
 }

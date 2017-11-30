@@ -9,6 +9,7 @@ import (
 func main() {
 	app := gor.NewGor()
 	app.SetRenderDir("testdata/examples/helloword")
+	app.Static("./vendor")
 
 	app.Get("/", func(req *gor.Req, res *gor.Res) {
 		res.Send("Hello World")

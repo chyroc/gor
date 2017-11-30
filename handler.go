@@ -12,6 +12,15 @@ type matchedRouteArray []*route
 func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	res := httpResponseWriterToRes(w, g)
 	req, err := httpRequestToReq(r)
+
+	if g.staticFilePath == "" {
+		g.staticFilePath = "/static"
+	}
+	if req.Method == http.MethodGet && strings.HasPrefix(req.BaseURL, g.staticFilePath) && g.staticFielDir != "" {
+		http.StripPrefix(g.staticFilePath, http.FileServer(http.Dir(g.staticFielDir))).ServeHTTP(w, r)
+		return
+	}
+
 	if err != nil {
 		res.Error(err.Error())
 		return
