@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+
+	"github.com/unrolled/render"
 )
 
 // Res is http ResponseWriter and some gor Response method
@@ -94,6 +96,12 @@ func (res *Res) JSON(v interface{}) {
 
 	res.w.Header().Set("Content-Type", "application/json")
 	res.Write(b)
+}
+
+// HTML render HTML
+func (res *Res) HTML(v interface{}) {
+	r := render.New()
+	r.HTML(res, res.statusCode, "", v)
 }
 
 // Redirect Redirect to another url
