@@ -13,7 +13,6 @@ jobs:
       - run: go get -u github.com/rakyll/gotest
       - run: go get -u github.com/alecthomas/gometalinter
       - run: gometalinter --install
-      - run: gofmt -w $(find . -type f -name '*.go' -not -path "./vendor/*")
 
       - run: ./.circleci/check_code_style.sh
       - run: gometalinter --config=./.circleci/gometalinter_config.json ./...

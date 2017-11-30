@@ -12,7 +12,7 @@ import (
 type handlerType int
 
 const (
-	unkonwFunc      handlerType = iota
+	unkonwFunc handlerType = iota
 	handlerFunc
 	handlerFuncNext
 	midFunc

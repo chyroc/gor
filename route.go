@@ -22,7 +22,7 @@ type HandlerFuncNext func(*Req, *Res, Next)
 type matchType int
 
 const (
-	preMatch  matchType = iota
+	preMatch matchType = iota
 	fullMatch
 )
 
@@ -173,13 +173,13 @@ func (r *Route) useWithOne(pattern string, matchType matchType, h interface{}) {
 		switch h.(type) {
 		case func(req *Req, res *Res):
 			if f, ok := h.(func(req *Req, res *Res)); ok {
-				r.addHandlerFuncAndNextRoute("ALL", pattern, preMatch, HandlerFunc(f), nil)
+				r.addHandlerFuncAndNextRoute("ALL", pattern, matchType, HandlerFunc(f), nil)
 			} else {
 				err = fmt.Errorf("cannot convert to gor.HandlerFunc")
 			}
 		case func(req *Req, res *Res, next Next):
 			if f, ok := h.(func(req *Req, res *Res, next Next)); ok {
-				r.addHandlerFuncAndNextRoute("ALL", pattern, preMatch, nil, HandlerFuncNext(f))
+				r.addHandlerFuncAndNextRoute("ALL", pattern, matchType, nil, HandlerFuncNext(f))
 			} else {
 				err = fmt.Errorf("cannot convert to gor.HandlerFuncNext")
 			}
@@ -190,7 +190,7 @@ func (r *Route) useWithOne(pattern string, matchType matchType, h interface{}) {
 		err = fmt.Errorf("maybe you are transmiting gor.Middleware, but please use Pointer, not Struct")
 	case reflect.Ptr:
 		if f, ok := h.(Middleware); ok {
-			r.useWithMiddleware("ALL", pattern, preMatch, f)
+			r.useWithMiddleware("ALL", pattern, matchType, f)
 		} else {
 			err = fmt.Errorf("cannot convert to gor.Middleware")
 		}
