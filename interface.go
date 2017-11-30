@@ -14,6 +14,7 @@ type resInterface interface {
 	SendStatus(code int)
 	Send(v interface{})
 	JSON(v interface{})
+	HTML(v interface{})
 	Redirect(path string)
 	AddHeader(key, val string)
 	SetCookie(key, val string, option ...Cookie)
