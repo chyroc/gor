@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"fmt"
+	"github.com/unrolled/render"
 )
 
 type bodyData struct {
@@ -140,4 +143,9 @@ func (req *Req) AddContext(key, val interface{}) {
 // GetContext get context from gor by key
 func (req *Req) GetContext(key interface{}) interface{} {
 	return req.context.Value(key)
+}
+
+func adf() {
+	r := render.New()
+	fmt.Printf("", r)
 }

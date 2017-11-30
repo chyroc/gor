@@ -1,7 +1,0 @@
-package: github.com/Chyroc/gor
-import: []
-testImport:
-- package: github.com/gavv/httpexpect
-- package: github.com/stretchr/testify
-  subpackages:
-  - assert
