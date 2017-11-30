@@ -24,6 +24,7 @@ type matchType int
 const (
 	preMatch matchType = iota
 	fullMatch
+	onlyLastFull
 )
 
 type route struct {
@@ -131,8 +132,17 @@ func (r *Route) Trace(pattern string, h HandlerFunc) {
 // type HandlerFuncNext func(*Req, *Res, Next)
 // type Middleware interface
 func (r *Route) Use(hs ...interface{}) {
+	r.use(preMatch, hs...)
+}
+
+// All http trace method
+func (r *Route) All(hs ...interface{}) {
+	r.use(onlyLastFull, hs...)
+}
+
+func (r *Route) use(matchType matchType, hs ...interface{}) {
 	if len(hs) == 1 {
-		r.useWithOne("/", hs[0])
+		r.useWithOne("/", matchType, hs[0])
 		return
 	}
 
@@ -142,16 +152,16 @@ func (r *Route) Use(hs ...interface{}) {
 		firstValue := reflect.ValueOf(first)
 		pattern := firstValue.String()
 		for _, h := range hs[1:] {
-			r.useWithOne(pattern, h)
+			r.useWithOne(pattern, matchType, h)
 		}
 	} else {
 		for _, h := range hs {
-			r.useWithOne("/", h)
+			r.useWithOne("/", matchType, h)
 		}
 	}
 }
 
-func (r *Route) useWithOne(pattern string, h interface{}) {
+func (r *Route) useWithOne(pattern string, matchType matchType, h interface{}) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -164,13 +174,13 @@ func (r *Route) useWithOne(pattern string, h interface{}) {
 		switch h.(type) {
 		case func(req *Req, res *Res):
 			if f, ok := h.(func(req *Req, res *Res)); ok {
-				r.addHandlerFuncAndNextRoute("ALL", pattern, preMatch, HandlerFunc(f), nil)
+				r.addHandlerFuncAndNextRoute("ALL", pattern, matchType, HandlerFunc(f), nil)
 			} else {
 				err = fmt.Errorf("cannot convert to gor.HandlerFunc")
 			}
 		case func(req *Req, res *Res, next Next):
 			if f, ok := h.(func(req *Req, res *Res, next Next)); ok {
-				r.addHandlerFuncAndNextRoute("ALL", pattern, preMatch, nil, HandlerFuncNext(f))
+				r.addHandlerFuncAndNextRoute("ALL", pattern, matchType, nil, HandlerFuncNext(f))
 			} else {
 				err = fmt.Errorf("cannot convert to gor.HandlerFuncNext")
 			}
@@ -181,7 +191,7 @@ func (r *Route) useWithOne(pattern string, h interface{}) {
 		err = fmt.Errorf("maybe you are transmiting gor.Middleware, but please use Pointer, not Struct")
 	case reflect.Ptr:
 		if f, ok := h.(Middleware); ok {
-			r.useWithMiddleware("ALL", pattern, preMatch, f)
+			r.useWithMiddleware("ALL", pattern, matchType, f)
 		} else {
 			err = fmt.Errorf("cannot convert to gor.Middleware")
 		}
@@ -228,6 +238,9 @@ func (r *Route) useWithMiddleware(method, pattern string, matchType matchType, m
 		panic("middleware method must be ALL")
 	}
 	subRoutes := mid.handler(pattern)
+	if matchType == fullMatch {
+		fixMatchType(subRoutes)
+	}
 
 	// 重新计算subRoutes的正则
 	for _, v := range subRoutes {
@@ -244,4 +257,11 @@ func (r *Route) useWithMiddleware(method, pattern string, matchType matchType, m
 		children: subRoutes,
 	}
 	r.routes = append(r.routes, parent)
+}
+
+func fixMatchType(roures []*route) {
+	for _, v := range roures {
+		v.matchType = fullMatch
+		fixMatchType(v.children)
+	}
 }

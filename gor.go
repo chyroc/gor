@@ -93,16 +93,25 @@ func recursionMatch(method, requestPath, prePath string, parentRoutes []*route, 
 		if route.method != "ALL" && route.method != method {
 			continue
 		}
-		_, matched := matchPath(route.routePath, requestPath, route.matchType)
+		mType := route.matchType
+		if mType == onlyLastFull {
+			if len(route.children) > 0 {
+				mType = preMatch
+			} else {
+				mType = fullMatch
+			}
+		}
+
+		_, matched := matchPath(route.routePath, requestPath, mType)
 
 		if matched {
 			if len(route.children) > 0 {
-				subrequestPath := strings.Join(strings.Split(requestPath, "/")[2:], "/")
-				recursionMatch(method, subrequestPath, prePath+route.routePath, route.children, matchedRoutes)
+				subRequestPath := strings.Join(strings.Split(requestPath, "/")[2:], "/")
+				recursionMatch(method, subRequestPath, prePath+route.routePath, route.children, matchedRoutes)
 			} else {
 				route2 := route.copy()
 				route2.routePath = prePath + route2.routePath
-				(*matchedRoutes) = append((*matchedRoutes), route2)
+				*matchedRoutes = append(*matchedRoutes, route2)
 			}
 		}
 	}
@@ -129,6 +138,7 @@ func genMatchPathReg(routePath string) *regexp.Regexp {
 	return nil
 }
 
+// matchtype pre full onlyLastFull
 func matchPath(routePath, requestPath string, matchtype matchType) (params map[string]string, matched bool) {
 	if !strings.HasPrefix(routePath, "/") {
 		routePath = "/" + routePath
