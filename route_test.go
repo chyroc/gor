@@ -12,7 +12,7 @@ import (
 type handlerType int
 
 const (
-	unkonwFunc handlerType = iota
+	unkonwFunc      handlerType = iota
 	handlerFunc
 	handlerFuncNext
 	midFunc
@@ -256,4 +256,15 @@ func TestRoute_function_next_mutil_errors(t *testing.T) {
 	e.GET("/0").Expect().Status(http.StatusOK)
 	e.GET("/1").Expect().Status(http.StatusInternalServerError).Text().Equal("1")
 	e.GET("/2").Expect().Status(http.StatusInternalServerError).Text().Equal("1, 2")
+}
+
+func TestFixMatchType(t *testing.T) {
+	routes := []*route{
+		{matchType: preMatch},
+		{matchType: preMatch, children: []*route{{matchType: preMatch}}},
+	}
+	fixMatchType(routes)
+	assert.Equal(t, fullMatch, routes[0].matchType)
+	assert.Equal(t, fullMatch, routes[1].matchType)
+	assert.Equal(t, fullMatch, routes[1].children[0].matchType)
 }

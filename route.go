@@ -22,7 +22,7 @@ type HandlerFuncNext func(*Req, *Res, Next)
 type matchType int
 
 const (
-	preMatch matchType = iota
+	preMatch  matchType = iota
 	fullMatch
 )
 
@@ -131,8 +131,17 @@ func (r *Route) Trace(pattern string, h HandlerFunc) {
 // type HandlerFuncNext func(*Req, *Res, Next)
 // type Middleware interface
 func (r *Route) Use(hs ...interface{}) {
+	r.use(preMatch, hs...)
+}
+
+// All http trace method
+func (r *Route) All(hs ...interface{}) {
+	r.use(fullMatch, hs...)
+}
+
+func (r *Route) use(matchType matchType, hs ...interface{}) {
 	if len(hs) == 1 {
-		r.useWithOne("/", hs[0])
+		r.useWithOne("/", matchType, hs[0])
 		return
 	}
 
@@ -142,16 +151,16 @@ func (r *Route) Use(hs ...interface{}) {
 		firstValue := reflect.ValueOf(first)
 		pattern := firstValue.String()
 		for _, h := range hs[1:] {
-			r.useWithOne(pattern, h)
+			r.useWithOne(pattern, matchType, h)
 		}
 	} else {
 		for _, h := range hs {
-			r.useWithOne("/", h)
+			r.useWithOne("/", matchType, h)
 		}
 	}
 }
 
-func (r *Route) useWithOne(pattern string, h interface{}) {
+func (r *Route) useWithOne(pattern string, matchType matchType, h interface{}) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -228,6 +237,9 @@ func (r *Route) useWithMiddleware(method, pattern string, matchType matchType, m
 		panic("middleware method must be ALL")
 	}
 	subRoutes := mid.handler(pattern)
+	if matchType == fullMatch {
+		fixMatchType(subRoutes)
+	}
 
 	// 重新计算subRoutes的正则
 	for _, v := range subRoutes {
@@ -244,4 +256,11 @@ func (r *Route) useWithMiddleware(method, pattern string, matchType matchType, m
 		children: subRoutes,
 	}
 	r.routes = append(r.routes, parent)
+}
+
+func fixMatchType(roures []*route) {
+	for _, v := range roures {
+		v.matchType = fullMatch
+		fixMatchType(v.children)
+	}
 }
