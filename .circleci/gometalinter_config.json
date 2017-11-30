@@ -7,7 +7,6 @@
     "goconst",
     "goimports",
     "golint",
-    "gotype",
     "gotypex",
     "ineffassign",
     "interfacer",
@@ -31,3 +30,4 @@
 // errcheck
 // dupl
 // nakedret
+// gotype
