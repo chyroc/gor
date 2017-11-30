@@ -6,6 +6,8 @@ import (
 
 type appInterface interface {
 	SetRenderDir(dir string)
+	SetStaticPath(path string)
+	Static(dir string)
 }
 
 type resInterface interface {

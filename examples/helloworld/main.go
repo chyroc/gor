@@ -9,6 +9,8 @@ import (
 func main() {
 	app := gor.NewGor()
 	app.SetRenderDir("testdata/examples/helloword")
+	app.SetStaticPath("/assert")
+	app.Static("/Users/chyroc/Code/Golang/src/github.com/Chyroc/gor")
 
 	app.Get("/", func(req *gor.Req, res *gor.Res) {
 		res.Send("Hello World")
