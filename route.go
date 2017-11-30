@@ -24,6 +24,7 @@ type matchType int
 const (
 	preMatch matchType = iota
 	fullMatch
+	onlyLastFull
 )
 
 type route struct {
@@ -136,7 +137,7 @@ func (r *Route) Use(hs ...interface{}) {
 
 // All http trace method
 func (r *Route) All(hs ...interface{}) {
-	r.use(fullMatch, hs...)
+	r.use(onlyLastFull, hs...)
 }
 
 func (r *Route) use(matchType matchType, hs ...interface{}) {
