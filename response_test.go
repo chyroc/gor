@@ -100,6 +100,16 @@ func TestJSON(t *testing.T) {
 	}
 }
 
+func TestHTML(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Get("/", func(req *Req, res *Res) { res.HTML("1", nil) })
+	e.GET("/").Expect().Status(http.StatusInternalServerError)
+	app.SetRenderDir("testdata/examples/helloword")
+	e.GET("/").Expect().Status(http.StatusOK).Body().Equal("<h1>Hello world.</h1>")
+}
+
 func TestRedirect(t *testing.T) {
 	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()

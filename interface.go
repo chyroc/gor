@@ -4,8 +4,8 @@ import (
 	"net/http"
 )
 
-type gorInterface interface {
-	http.Handler
+type appInterface interface {
+	SetRenderDir(dir string)
 }
 
 type resInterface interface {
@@ -14,7 +14,7 @@ type resInterface interface {
 	SendStatus(code int)
 	Send(v interface{})
 	JSON(v interface{})
-	HTML(v interface{})
+	HTML(v string, data interface{})
 	Redirect(path string)
 	AddHeader(key, val string)
 	SetCookie(key, val string, option ...Cookie)
@@ -53,8 +53,11 @@ type RouteInterface interface {
 	Middleware
 }
 
-var _ gorInterface = (*Gor)(nil)
+var _ http.Handler = (*Gor)(nil)
+var _ appInterface = (*Gor)(nil)
+var _ RouteInterface = (*Gor)(nil)
+
+var _ RouteInterface = (*Route)(nil)
+
 var _ resInterface = (*Res)(nil)
 var _ reqInterface = (*Req)(nil)
-var _ RouteInterface = (*Gor)(nil)
-var _ RouteInterface = (*Route)(nil)

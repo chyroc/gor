@@ -11,17 +11,19 @@ import (
 
 // Res is http ResponseWriter and some gor Response method
 type Res struct {
-	w    http.ResponseWriter
-	exit bool
+	w      http.ResponseWriter
+	exit   bool
+	render *render.Render
 
 	Response   interface{}
 	statusCode int
 }
 
-func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter) *Res {
+func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter, g *Gor) *Res {
 	return &Res{
 		httpResponseWriter,
 		false,
+		render.New(render.Options{Directory: g.renderDir}),
 		nil,
 		200,
 	}
@@ -99,9 +101,12 @@ func (res *Res) JSON(v interface{}) {
 }
 
 // HTML render HTML
-func (res *Res) HTML(v interface{}) {
-	r := render.New()
-	r.HTML(res, res.statusCode, "", v)
+func (res *Res) HTML(v string, data interface{}) {
+	if err := res.render.HTML(res, res.statusCode, v, data); err != nil {
+		res.Error(err.Error())
+		return
+	}
+	res.exit = true
 }
 
 // Redirect Redirect to another url
