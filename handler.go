@@ -39,7 +39,9 @@ func (g *Gor) Listen(addr string) error {
 }
 
 func doHandler(req *Req, res *Res, index int, matchRoutes []*route, requestPath string) {
+	forLoop := 0
 	for i, j := index, len(matchRoutes); i < j; i++ {
+		forLoop++
 		if res.exit {
 			return
 		}
@@ -68,7 +70,9 @@ func doHandler(req *Req, res *Res, index int, matchRoutes []*route, requestPath 
 		}
 	}
 
-	res.SendStatus(http.StatusNotFound)
+	if forLoop == len(matchRoutes) {
+		res.SendStatus(http.StatusNotFound)
+	}
 }
 
 func matchRouter(method string, requestPath string, routes []*route) []*route {
