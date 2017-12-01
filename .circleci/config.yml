@@ -13,7 +13,11 @@ jobs:
       - run: go get -u github.com/rakyll/gotest
       - run: go get -u github.com/alecthomas/gometalinter
       - run: gometalinter --install
+      - run: go get github.com/mattn/goveralls
 
       - run: ./.circleci/check_code_style.sh
       - run: gometalinter --config=./.circleci/gometalinter_config.json ./...
       - run: gotest $(go list ./... | grep -v /vendor | grep -v /examples)
+      - run: which goveralls
+      - run: go test -v -cover -race -coverprofile=$HOME/coverage.out
+#      - run: /home/ubuntu/.go_workspace/bin/goveralls -coverprofile=/home/ubuntu/coverage.out -service=circle-ci -repotoken=$COVERALLS_TOKEN
