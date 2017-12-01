@@ -31,7 +31,6 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	doHandler(req, res, 0, matchedRoutes, requestPath)
 
-	res.SendStatus(http.StatusNotFound)
 }
 
 // Listen bind port and start server
@@ -68,6 +67,8 @@ func doHandler(req *Req, res *Res, index int, matchRoutes []*route, requestPath 
 			panic("This can not exist when handler the request, this is a bug, please report : https://github.com/Chyroc/gor/issues")
 		}
 	}
+
+	res.SendStatus(http.StatusNotFound)
 }
 
 func matchRouter(method string, requestPath string, routes []*route) []*route {

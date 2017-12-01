@@ -4,10 +4,12 @@ import (
 	"log"
 
 	"github.com/Chyroc/gor"
+	"github.com/Chyroc/gor/middlerware"
 )
 
 func main() {
 	app := gor.NewGor()
+	app.Use(middlerware.Logger)
 	app.SetRenderDir("testdata/examples/helloword")
 	app.Static("./vendor")
 
@@ -16,6 +18,7 @@ func main() {
 	})
 
 	app.Get("/json", func(req *gor.Req, res *gor.Res) {
+		res.Status(302)
 		res.JSON([]string{"a", "b", "c"})
 	})
 
