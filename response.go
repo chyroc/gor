@@ -16,7 +16,7 @@ type Res struct {
 	render *render.Render
 
 	Response   interface{}
-	statusCode int
+	StatusCode int
 }
 
 func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter, g *Gor) *Res {
@@ -32,13 +32,13 @@ func httpResponseWriterToRes(httpResponseWriter http.ResponseWriter, g *Gor) *Re
 func (res *Res) Write(data []byte) (int, error) {
 	res.exit = true
 	res.Response = string(data)
-	res.w.WriteHeader(res.statusCode)
+	res.w.WriteHeader(res.StatusCode)
 	return res.w.Write(data)
 }
 
 // Status set Response http status code
 func (res *Res) Status(code int) *Res {
-	res.statusCode = code
+	res.StatusCode = code
 	if http.StatusText(code) == "" {
 		res.Status(http.StatusInternalServerError).Send(ErrHTTPStatusCodeInvalid)
 	}
@@ -102,7 +102,7 @@ func (res *Res) JSON(v interface{}) {
 
 // HTML render HTML
 func (res *Res) HTML(v string, data interface{}) {
-	if err := res.render.HTML(res, res.statusCode, v, data); err != nil {
+	if err := res.render.HTML(res, res.StatusCode, v, data); err != nil {
 		res.Error(err.Error())
 		return
 	}
@@ -112,8 +112,7 @@ func (res *Res) HTML(v string, data interface{}) {
 // Redirect Redirect to another url
 func (res *Res) Redirect(path string) {
 	res.w.Header().Set("Location", path)
-	res.w.WriteHeader(http.StatusFound)
-	res.Write([]byte(fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)))
+	res.Status(http.StatusFound).Write([]byte(fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)))
 }
 
 // AddHeader append (key, val) to headers

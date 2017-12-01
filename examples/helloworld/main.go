@@ -4,10 +4,12 @@ import (
 	"log"
 
 	"github.com/Chyroc/gor"
+	"github.com/Chyroc/gor/middlerware"
 )
 
 func main() {
 	app := gor.NewGor()
+	app.Use(middlerware.Logger)
 	app.SetRenderDir("testdata/examples/helloword")
 	app.Static("./vendor")
 
@@ -17,6 +19,14 @@ func main() {
 
 	app.Get("/json", func(req *gor.Req, res *gor.Res) {
 		res.JSON([]string{"a", "b", "c"})
+	})
+
+	app.Get("/redirect", func(req *gor.Req, res *gor.Res) {
+		res.Redirect("/404")
+	})
+
+	app.Get("/500", func(req *gor.Req, res *gor.Res) {
+		res.Status(500).End()
 	})
 
 	router := gor.NewRouter()

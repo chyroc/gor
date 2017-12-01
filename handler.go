@@ -31,7 +31,6 @@ func (g *Gor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	doHandler(req, res, 0, matchedRoutes, requestPath)
 
-	res.SendStatus(http.StatusNotFound)
 }
 
 // Listen bind port and start server
@@ -40,7 +39,9 @@ func (g *Gor) Listen(addr string) error {
 }
 
 func doHandler(req *Req, res *Res, index int, matchRoutes []*route, requestPath string) {
+	forLoop := 0
 	for i, j := index, len(matchRoutes); i < j; i++ {
+		forLoop++
 		if res.exit {
 			return
 		}
@@ -67,6 +68,10 @@ func doHandler(req *Req, res *Res, index int, matchRoutes []*route, requestPath 
 		} else {
 			panic("This can not exist when handler the request, this is a bug, please report : https://github.com/Chyroc/gor/issues")
 		}
+	}
+
+	if forLoop == len(matchRoutes) {
+		res.SendStatus(http.StatusNotFound)
 	}
 }
 
