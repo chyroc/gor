@@ -18,8 +18,11 @@ func main() {
 	})
 
 	app.Get("/json", func(req *gor.Req, res *gor.Res) {
-		res.Status(302)
 		res.JSON([]string{"a", "b", "c"})
+	})
+
+	app.Get("/redirect", func(req *gor.Req, res *gor.Res) {
+		res.Redirect("/404")
 	})
 
 	router := gor.NewRouter()

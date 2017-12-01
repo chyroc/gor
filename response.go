@@ -112,8 +112,7 @@ func (res *Res) HTML(v string, data interface{}) {
 // Redirect Redirect to another url
 func (res *Res) Redirect(path string) {
 	res.w.Header().Set("Location", path)
-	res.w.WriteHeader(http.StatusFound)
-	res.Write([]byte(fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)))
+	res.Status(http.StatusFound).Write([]byte(fmt.Sprintf(`%s. Redirecting to %s`, http.StatusText(http.StatusFound), path)))
 }
 
 // AddHeader append (key, val) to headers
