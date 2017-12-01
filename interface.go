@@ -50,6 +50,7 @@ type Middleware interface {
 type RouteInterface interface {
 	Use(...interface{})
 	All(...interface{})
+	Group(string, func(group *Router))
 
 	normalMethod
 	Middleware

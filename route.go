@@ -140,6 +140,13 @@ func (r *Route) All(hs ...interface{}) {
 	r.use(onlyLastFull, hs...)
 }
 
+// Group like all but donnot new a router
+func (r *Route) Group(pattern string, app func(group *Router)) {
+	router := NewRouter()
+	app(router)
+	r.All(pattern, router)
+}
+
 func (r *Route) use(matchType matchType, hs ...interface{}) {
 	if len(hs) == 1 {
 		r.useWithOne("/", matchType, hs[0])

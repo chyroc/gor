@@ -301,9 +301,9 @@ func TestRoute_prematch_use_params(t *testing.T) {
 }
 
 func TestRoute_function_next_mutil_errors(t *testing.T) {
-	app, ts, e, as := newTestServer(t)
+	app, ts, e, _ := newTestServer(t)
 	defer ts.Close()
-	as.Nil(nil)
+
 	app.Use("/0", func(req *Req, res *Res, next Next) { next(); res.Send("x") })
 	app.Use("/1", func(req *Req, res *Res, next Next) { next("1") })
 	app.Use("/2", func(req *Req, res *Res, next Next) { next("1", "2") })
@@ -322,4 +322,19 @@ func TestFixMatchType(t *testing.T) {
 	assert.Equal(t, fullMatch, routes[0].matchType)
 	assert.Equal(t, fullMatch, routes[1].matchType)
 	assert.Equal(t, fullMatch, routes[1].children[0].matchType)
+}
+
+func TestRoute_Group(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Group("/group", func(group *Router) {
+		group.Get("/1", func(req *Req, res *Res) { res.Send("1") })
+		group.Group("/sub", func(group *Router) {
+			group.Get("/2", func(req *Req, res *Res) { res.Send("2") })
+		})
+	})
+
+	e.GET("/group/1").Expect().Status(http.StatusOK).Text().Equal("1")
+	e.GET("/group/sub/2").Expect().Status(http.StatusOK).Text().Equal("2")
 }
