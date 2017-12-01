@@ -16,4 +16,4 @@ jobs:
 
       - run: ./.circleci/check_code_style.sh
       - run: gometalinter --config=./.circleci/gometalinter_config.json ./...
-      - run: gotest $(go list ./... | grep -v /vendor | grep -v /examples)
+      - run: gotest $(go list ./... | grep -v /vendor | grep -v /examples) -cover -race
