@@ -25,6 +25,10 @@ func main() {
 		res.Redirect("/404")
 	})
 
+	app.Get("/500", func(req *gor.Req, res *gor.Res) {
+		res.Status(500).End()
+	})
+
 	router := gor.NewRouter()
 	router.Get("/1", func(req *gor.Req, res *gor.Res) { res.HTML("1", "") })
 	router.Get("/2", func(req *gor.Req, res *gor.Res) { res.HTML("2", map[string]string{"name": "Chyroc"}) })
