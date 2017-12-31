@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -140,4 +141,10 @@ func (req *Req) AddContext(key, val interface{}) {
 // GetContext get context from gor by key
 func (req *Req) GetContext(key interface{}) interface{} {
 	return req.context.Value(key)
+}
+
+// BindJSON body to json
+func (req *Req) BindJSON(v interface{}) error {
+	defer io.Copy(ioutil.Discard, req.r.Body)
+	return json.NewDecoder(req.r.Body).Decode(v)
 }
