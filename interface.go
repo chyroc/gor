@@ -27,6 +27,7 @@ type resInterface interface {
 type reqInterface interface {
 	AddContext(key, val interface{})
 	GetContext(key interface{}) interface{}
+	BindJSON(v interface{}) error
 }
 
 type normalMethod interface {

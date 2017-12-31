@@ -83,3 +83,21 @@ func TestBody(t *testing.T) {
 	e.POST("/").WithForm(map[string]string{"s": "d"}).Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"form-data": nil, "form-url-encoded": map[string][]string{"s": {"d"}}, "json": nil})
 	e.POST("/").WithMultipart().WithForm(map[string]string{"s": "d"}).Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"form-data": map[string][]string{"s": {"d"}}, "form-url-encoded": nil, "json": nil})
 }
+
+func TestBind(t *testing.T) {
+	app, ts, e, _ := newTestServer(t)
+	defer ts.Close()
+
+	app.Post("/", func(req *Req, res *Res) {
+		var t struct {
+			Name string `json:"name"`
+			Age  int    `json:"age"`
+		}
+		if err := req.BindJSON(&t); err != nil {
+			res.Error(err.Error())
+			return
+		}
+		res.JSON(t)
+	})
+	e.POST("/").WithJSON(map[string]interface{}{"name": "1", "age": 24}).Expect().Status(http.StatusOK).JSON().Equal(map[string]interface{}{"name": "1", "age": 24})
+}
