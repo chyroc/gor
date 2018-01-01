@@ -10,6 +10,7 @@ import (
 func main() {
 	app := gor.NewGor()
 	app.Use(middlerware.Logger)
+	app.Use(middlerware.Recover)
 	app.SetRenderDir("testdata/examples/helloword")
 	app.Static("./vendor")
 
@@ -27,6 +28,11 @@ func main() {
 
 	app.Get("/500", func(req *gor.Req, res *gor.Res) {
 		res.Status(500).End()
+	})
+
+	app.Get("/panic", func(req *gor.Req, res *gor.Res) {
+		var q *gor.Req = nil
+		res.Status(200).JSON(q.Body)
 	})
 
 	router := gor.NewRouter()
