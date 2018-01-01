@@ -27,6 +27,7 @@ type Req struct {
 	Secure   bool
 	Method   string
 	Query    map[string][]string
+	Headers  map[string][]string
 	Hostname string
 
 	BaseURL     string
@@ -123,6 +124,7 @@ func httpRequestToReq(r *http.Request) (*Req, error) {
 		Secure:   protocol == "https",
 		Method:   r.Method,
 		Query:    query,
+		Headers:  r.Header,
 		Hostname: getHostname(r),
 
 		BaseURL:     getBaseURL(r),
